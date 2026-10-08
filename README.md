@@ -32,7 +32,7 @@ An HA light-group helper and a native Zigbee group are different things. The lat
 
 - Upstream direct group Toggle was installed and physically verified to switch five Zigbee lamps promptly with the old HA button automation disabled.
 - The new hold-to-off implementation passes **243 host simulation tests**, including 12 checks of its command behavior across two build variants.
-- The new hold-to-off image is under commissioning. Build and physical validation results are tracked in [validation](docs/validation.md). A passing host test is not proof of successful installation or over-the-air delivery.
+- The new hold-to-off image has been compiled and structurally validated; hardware commissioning is pending. Build and physical validation results are tracked in [validation](docs/validation.md). A passing host test is not proof of successful installation or over-the-air delivery.
 - A whole-HA-stopped test and a physical battery-removal persistence test have not yet been recorded.
 
 ## Start here

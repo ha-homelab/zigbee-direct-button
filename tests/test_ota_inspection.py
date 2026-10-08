@@ -53,11 +53,11 @@ def test_reject_missing_boot_marker_even_with_valid_crc():
 
 def test_reject_oversized_image_even_with_consistent_lengths_and_crc():
     image = bytearray(sample()[:-4])
-    image += b"\0" * (0x40000 - len(image))
+    image += b"\0" * (0x34000 - len(image))
     payload_len = len(image) + 4 - 62
     image[52:56] = (len(image) + 4).to_bytes(4, 'little')
     image[58:62] = payload_len.to_bytes(4, 'little')
     image[86:90] = payload_len.to_bytes(4, 'little')
     image += (binascii.crc32(image[62:]) ^ 0xFFFFFFFF).to_bytes(4, 'little')
-    with pytest.raises(ValueError, match='256 KiB'):
+    with pytest.raises(ValueError, match='208 KiB'):
         OTA.inspect_image(image)

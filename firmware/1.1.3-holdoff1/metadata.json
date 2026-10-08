@@ -1,0 +1,13 @@
+{
+  "manufacturerCode": 4417,
+  "imageType": 45636,
+  "fileVersion": 285421569,
+  "fileVersionHex": "0x11033001",
+  "fileSize": 151698,
+  "payloadSize": 151636,
+  "otaHeaderString": "Telink OTA Image",
+  "zigbeeStackVersion": 2,
+  "telinkCrcValid": true,
+  "sha256": "de84c34f5d0f9a15d8f3bf47323958121eb3e2b599f19c2e4ca389bec046e59d",
+  "sha512": "760b86ecf85f3331d2f11b02e7e0592611627c6d9cb820336fab5b0a370be4350b56c41912a999c7b90a8784261e1ba161a025a865f6cce815110dc24072a666"
+}

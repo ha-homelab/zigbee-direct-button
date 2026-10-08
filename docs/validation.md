@@ -8,7 +8,7 @@ As of 2026-10-08:
 - Five Zigbee lamps acknowledged membership of a native group; the button acknowledged its On/Off group binding.
 - The owner physically confirmed prompt group on and off with the old HA toggle automation disabled.
 - The hold-to-off patch passed **243 host simulation tests**, including **12 new command-contract cases** across host normal and EndDevice variants. The Python 3.14 run emitted 11 upstream harness thread/output-capture warnings in the firmware run; there were no failing tests. The public repository also passes 19 artifact corruption/identity checks, for **262 tests total** (eight inherited output-capture warnings in that run).
-- The new hold-to-off binary's build/deployment and physical acceptance are pending this record's update. Do not infer that the new hold behavior is already installed from the earlier upstream Toggle test.
+- The new hold-to-off binary was compiled on Linux amd64 using the pinned source/SDK/compiler. Its 151,698-byte OTA file passed identity, length, embedded version, boot marker, CRC, and size-limit checks. Hardware installation and physical acceptance remain pending; do not infer these from the earlier upstream Toggle test.
 - HA-stopped independence and actual battery-removal persistence have not yet been physically recorded.
 
 ## Before declaring a deployment successful
@@ -36,3 +36,13 @@ Once baseline behavior is confirmed, plan these one at a time:
 - **Range and parent recovery:** test the normal location after commissioning close to the radio. A reliable near-radio test does not establish whole-house range.
 
 Do not combine all outages in one experiment; otherwise failures cannot be assigned to firmware, network, power, or reporting. Record partial results as partial results.
+
+## Published build
+
+The normal-update image and [metadata](../firmware/1.1.3-holdoff1/metadata.json) are in `firmware/1.1.3-holdoff1/`. OTA SHA-256:
+
+```text
+de84c34f5d0f9a15d8f3bf47323958121eb3e2b599f19c2e4ca389bec046e59d
+```
+
+The build's preprocessed SDK acceptance limit is 208 KiB; the inspector applies that limit to the full OTA file. The binary has no deployment credentials or live network configuration: it initializes identity and keys on the device, rather than embedding a private network backup.

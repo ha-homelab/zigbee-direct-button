@@ -13,8 +13,8 @@ EXPECTED = (4417, 45636, 0x11033001)
 
 
 def inspect_image(data: bytes) -> dict:
-    if len(data) > 0x40000:
-        raise ValueError('OTA image exceeds the target 256 KiB limit')
+    if len(data) > 0x34000:
+        raise ValueError('OTA image exceeds the target 208 KiB OTA limit')
     if len(data) < HEADER.size + SUBELEMENT.size + 32:
         raise ValueError('Truncated OTA image')
     magic, revision, header_len, fields, manufacturer, image_type, version, stack, label, size = HEADER.unpack_from(data)
