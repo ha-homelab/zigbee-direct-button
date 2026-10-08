@@ -6,7 +6,13 @@ Check the correct battery size, charge, and contact pressure. A visible LED prov
 
 ## Update says “in progress” but no bytes arrive
 
-The service may be waiting for the sleepy device. Briefly press the large working key with pauses, then watch actual image-block or percentage progress. Do not hold Reset/Pair. Confirm image type, model filters, and offered version. Stop repeated presses once transfer is continuous. A mismatched image will not become correct by repeatedly restarting the update.
+First distinguish **stock Tuya conversion** from an update of the **converted upstream 1.1.3** battery firmware. Repeated short presses helped the stock conversion, but source inspection and host simulation showed that ordinary large-key presses in the converted firmware do not reopen fast polling: they can send Toggle/reports while the device remains on a 120-second long-poll interval.
+
+The default startup window polls every 500 ms for ten seconds. In the observed HA/ZHA implementation, `update.install` waits for a Poll Control bind and writes a 30-second fast-poll timeout **before** `image_notify`. One attempt timed out there without sending image bytes. A responsive light switch and an `in_progress` flag therefore do not prove that an OTA notification or payload has reached the device.
+
+Confirm the exact image type, model filters, offered version, and whether preparation or payload transfer is active. For the converted firmware, use the [guarded startup-window procedure](upgrade.md#start-within-the-startup-fast-poll-window): arm the example script, then perform the controlled five-second battery removal and immediate single working-key press **only after confirming that the previous install ended and no payload is transferring**. Never remove power during an active or ambiguously active install. A stalled percentage alone is not proof that power removal is safe.
+
+The script listens for the press-action sensor state **`press`**, not `pressed`. If nothing starts, inspect its trace, the exact sensor entity/state, and its installed/latest-version and idle guards. A ten-minute wait timeout stops the script without starting an update. Cancel an abandoned waiting script so a later ordinary press cannot unexpectedly trigger it. The startup procedure is not a verified successful transfer by itself; require progress, completion, version readback, and physical tests.
 
 ## Update reached 100% but the UI still shows the old model
 
