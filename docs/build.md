@@ -64,3 +64,12 @@ The SDK is selected by its upstream release tag. The published build records its
 Do not use broad `make setup` or a default Router build for this button. `scripts/build.sh` supplies the exact EndDevice target, pin map, OTA identity, and version. Downloaded SDK/toolchains remain outside version control.
 
 For this 512 KiB target, the preprocessed SDK OTA acceptance limit is `0x34000` (208 KiB), stricter than the application relocation ceiling of 256 KiB. The inspector applies the 208 KiB limit to the whole OTA file.
+
+## Test dependency security update
+
+The development requirements intentionally use **pytest 9.0.3**, rather than
+the upstream snapshot's 8.4.2. Version 9.0.3 addresses the temporary-directory
+handling issue described in [GHSA-6w46-j5rx-g56g](https://github.com/advisories/GHSA-6w46-j5rx-g56g).
+This changes the host test runner only; it does not change firmware source,
+compiler settings, or previously published firmware artifacts. The complete
+262-test repository suite is validated against the updated runner.
