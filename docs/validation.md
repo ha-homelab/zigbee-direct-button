@@ -27,7 +27,9 @@ After the update, the device's OTA current-file-version attribute returned **285
 - `binded_mode` (`0xff05`): **ShortPressLongOff / 4**.
 - `long_press_duration` (`0xff03`): **1,000 ms**.
 
-These readings establish installation and stored configuration. They do not establish that every lamp received an actual short-press or hold command. Fresh group/binding verification and the physical checks below remain to be recorded. HA-stopped independence and battery-removal persistence **after the new installation** have not been tested; the pre-update battery restart is not a persistence test of the new image.
+A post-update HA snapshot confirms that the native Zigbee group still has **five registered lamp members**, the HA helper still contains **five lamp entities**, and the old button-triggered HA Toggle automation is **disabled**. This is a check of HA's registered membership and automation state, not a fresh per-lamp radio acknowledgment or a new device Bind response.
+
+The version and attribute readings establish installation and stored configuration. Registered membership alone does not establish that every lamp received an actual short-press or hold command. Fresh radio acknowledgments and the physical checks below remain to be recorded. HA-stopped independence and battery-removal persistence **after the new installation** have not been tested; the pre-update battery restart is not a persistence test of the new image.
 
 ## Before declaring a deployment successful
 

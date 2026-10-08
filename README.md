@@ -33,6 +33,7 @@ An HA light-group helper and a native Zigbee group are different things. The lat
 - **Earlier upstream baseline:** direct group Toggle was physically verified to switch five Zigbee lamps promptly with the old HA button automation disabled. That observation predates the hold-to-off update.
 - The new hold-to-off implementation passes **243 host simulation tests**, including 12 checks of its command behavior across two build variants.
 - **Hold-to-off is compiled, installed, and configured on the reference button.** The device reports `0x11033001`; uncached reads confirm Momentary, ToggleSimple, ShortPressLongOff, and a 1,000 ms threshold. The normal OTA took about 29 minutes 52 seconds. **Physical acceptance of the new short-press/hold behavior is still pending.** See [validation](docs/validation.md) for the evidence and remaining checks.
+- A post-update HA snapshot confirms five registered native-group members, five lamp entities in the HA helper, and the old HA button automation disabled. This is registration/state evidence; fresh lamp acknowledgments and physical confirmation of the new behavior remain pending.
 - A whole-HA-stopped test and a battery-removal persistence test **after installing the new firmware** have not been performed. The battery restart used to initiate the update does not establish either result.
 
 ## Start here
