@@ -1,0 +1,24 @@
+# Build/download/test output
+build/
+output/
+telink_tools/
+silabs_tools/
+.venv/
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.log
+.DS_Store
+# Deployment state belongs outside the repository
+.env
+.env.*
+!.env.example
+secrets.yaml
+*.db
+*.db-shm
+*.db-wal
+*.sqlite*
+*.backup
+*.dump
+private/
+backups/

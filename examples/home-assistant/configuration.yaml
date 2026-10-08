@@ -1,0 +1,8 @@
+# Merge into an existing zha: mapping; do not create a duplicate top-level key.
+zha:
+  custom_quirks_path: /config/custom_zha_quirks/
+  zigpy_config:
+    ota:
+      extra_providers:
+        - type: z2m_local
+          index_file: /config/ota/zigbee_direct_button/index.json

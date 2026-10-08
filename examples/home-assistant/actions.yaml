@@ -1,0 +1,23 @@
+# Example HA action sequence. Replace every entity ID with your local entity.
+# Run only after verifying patched runtime firmware 0x11033001.
+# This configures persistent button settings, not a light-control automation.
+- action: select.select_option
+  target:
+    entity_id: select.example_button_switch_mode_1
+  data:
+    option: Momentary
+- action: select.select_option
+  target:
+    entity_id: select.example_button_switch_actions_1
+  data:
+    option: ToggleSimple
+- action: number.set_value
+  target:
+    entity_id: number.example_button_long_press_mode_1
+  data:
+    value: 1000
+- action: select.select_option
+  target:
+    entity_id: select.example_button_binded_mode_1
+  data:
+    option: ShortPressLongOff

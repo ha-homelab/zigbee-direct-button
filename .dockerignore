@@ -1,0 +1,10 @@
+**/.git
+build
+output
+telink_tools
+silabs_tools
+.venv
+**/__pycache__
+.pytest_cache
+private
+backups
