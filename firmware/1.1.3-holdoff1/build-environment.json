@@ -1,0 +1,7 @@
+{
+  "os": "Linux",
+  "architecture": "x86_64",
+  "python": "3.12.15",
+  "sdk_archive_sha256": "77ca35173fc9d6c4fc8a6f6a97bd601d66c7a607a5c89e3012c138736ae0c049",
+  "compiler_archive_sha256": "33b854be3e3db3dba4b4dacdda2cd4ea1c94dfd4d562864a095956de7991b430"
+}
