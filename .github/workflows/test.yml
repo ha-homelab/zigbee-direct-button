@@ -21,3 +21,15 @@ jobs:
         run: |
           bash -n scripts/build.sh
           python -m py_compile scripts/check_ota.py scripts/make_ota_index.py examples/home-assistant/tuya_direct_button.py
+
+  gate:
+    name: CI gate
+    needs: [test]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require successful host tests
+        env:
+          TEST_RESULT: ${{ needs.test.result }}
+        run: test "$TEST_RESULT" = success
