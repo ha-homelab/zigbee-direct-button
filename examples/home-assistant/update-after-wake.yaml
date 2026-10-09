@@ -1,0 +1,33 @@
+# Add this entry to your HA script configuration and reload scripts while idle.
+# Replace BOTH example entity IDs throughout before use.
+# This is for an already-converted 0x11033000 button, not stock conversion.
+# Start this script BEFORE the controlled battery restart described in docs/upgrade.md.
+# Never remove power while an OTA payload is transferring or an install is active.
+example_button_update_after_wake:
+  alias: Example button - update after startup wake
+  description: Start the matching OTA on a fresh press during the startup fast-poll window.
+  mode: single
+  sequence:
+    - condition: template
+      value_template: >-
+        {{ has_value('update.example_button_firmware')
+           and state_attr('update.example_button_firmware', 'installed_version') == '0x11033000'
+           and state_attr('update.example_button_firmware', 'latest_version') == '0x11033001'
+           and state_attr('update.example_button_firmware', 'in_progress') == false }}
+    - wait_for_trigger:
+        - trigger: state
+          entity_id: sensor.example_button_press_action_1
+          to: "press"
+      timeout: "00:10:00"
+      continue_on_timeout: false
+    - condition: template
+      value_template: >-
+        {{ has_value('update.example_button_firmware')
+           and state_attr('update.example_button_firmware', 'installed_version') == '0x11033000'
+           and state_attr('update.example_button_firmware', 'latest_version') == '0x11033001'
+           and state_attr('update.example_button_firmware', 'in_progress') == false }}
+    - action: update.install
+      target:
+        entity_id: update.example_button_firmware
+      data:
+        version: "0x11033001"

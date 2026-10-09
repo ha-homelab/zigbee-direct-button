@@ -2,14 +2,34 @@
 
 ## Recorded evidence
 
-As of 2026-10-08:
+As of 2026-10-08, the hold-to-off image is **compiled, installed, and configured** on the reference button. **Physical acceptance is pending.**
 
-- The upstream EndDevice 1.1.3 image was installed on the exact reference hardware. The installed runtime identity and version were read back.
-- Five Zigbee lamps acknowledged membership of a native group; the button acknowledged its On/Off group binding.
-- The owner physically confirmed prompt group on and off with the old HA toggle automation disabled.
-- The hold-to-off patch passed **243 host simulation tests**, including **12 new command-contract cases** across host normal and EndDevice variants. The Python 3.14 run emitted 11 upstream harness thread/output-capture warnings in the firmware run; there were no failing tests. The public repository also passes 19 artifact corruption/identity checks, for **262 tests total** (eight inherited output-capture warnings in that run).
-- The new hold-to-off binary was compiled on Linux amd64 using the pinned source/SDK/compiler. Its 151,698-byte OTA file passed identity, length, embedded version, boot marker, CRC, and size-limit checks. Hardware installation and physical acceptance remain pending; do not infer these from the earlier upstream Toggle test.
-- HA-stopped independence and actual battery-removal persistence have not yet been physically recorded.
+### Earlier upstream baseline
+
+Before the hold-to-off update, the upstream EndDevice 1.1.3 image was installed on the exact reference hardware and its identity/version were read back. Five Zigbee lamps acknowledged native group membership, the button acknowledged its On/Off group binding, and the owner physically confirmed prompt group on/off with the old HA toggle automation disabled. These are historical baseline results, not a physical test of the newly installed hold-to-off image.
+
+### Build and host tests
+
+The hold-to-off patch passed **243 host simulation tests**, including **12 new command-contract cases** across host normal and EndDevice variants. The Python 3.14 firmware run emitted 11 upstream harness thread/output-capture warnings; there were no failing tests. The public repository also passes 19 artifact corruption/identity checks, for **262 tests total**. The later full run with pytest 9.0.3 passed all 262 tests with ten inherited output-capture warnings.
+
+The image was compiled on Linux amd64 using the pinned source/SDK/compiler. Its 151,698-byte OTA file passed identity, length, embedded version, boot marker, CRC, and size-limit checks.
+
+### Installed firmware and device configuration
+
+The third normal-update attempt succeeded after a controlled five-second battery removal, reinsertion, and immediate large-key press to start within the startup fast-poll window. The [upgrade runbook](upgrade.md#start-within-the-startup-fast-poll-window) explains this procedure and why it must only be used when no previous install or payload transfer is active.
+
+Actual transfer was observed from **22:31:00.642890 to 23:00:52.336563 UTC on 2026-10-08**, approximately **29 minutes 52 seconds**. HA's installation service completed successfully. This normal OTA took longer than the earlier stock-to-custom conversion, which took about eight and a half minutes. Neither observation is an expected timeout: monitor actual progress and completion rather than treating elapsed time alone as failure.
+
+After the update, the device's OTA current-file-version attribute returned **285421569 / `0x11033001`**. Uncached reads of endpoint 1, input cluster `0x0007`, confirmed:
+
+- `switch_mode` (`0xff00`): **Momentary / 1**.
+- `switch_actions` (`0x0010`): **ToggleSimple / 2**.
+- `binded_mode` (`0xff05`): **ShortPressLongOff / 4**.
+- `long_press_duration` (`0xff03`): **1,000 ms**.
+
+A post-update HA snapshot confirms that the native Zigbee group still has **five registered lamp members**, the HA helper still contains **five lamp entities**, and the old button-triggered HA Toggle automation is **disabled**. This is a check of HA's registered membership and automation state, not a fresh per-lamp radio acknowledgment or a new device Bind response.
+
+The version and attribute readings establish installation and stored configuration. Registered membership alone does not establish that every lamp received an actual short-press or hold command. Fresh radio acknowledgments and the physical checks below remain to be recorded. HA-stopped independence and battery-removal persistence **after the new installation** have not been tested; the pre-update battery restart is not a persistence test of the new image.
 
 ## Before declaring a deployment successful
 
