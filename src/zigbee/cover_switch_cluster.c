@@ -25,7 +25,7 @@
 extern zigbee_cover_cluster cover_clusters[];
 extern uint8_t cover_clusters_cnt;
 
-static zigbee_cover_switch_cluster *      cover_switch_cluster_by_endpoint[10];
+static zigbee_cover_switch_cluster *      cover_switch_cluster_by_endpoint[HAL_ZIGBEE_MAX_APP_ENDPOINTS + 1];
 static zigbee_cover_switch_cluster_config nv_config_buffer;
 
 static const uint8_t  multistate_out_of_service = 0;
@@ -187,7 +187,8 @@ void cover_switch_cluster_update_present_value(zigbee_cover_switch_cluster *clus
     }
 }
 
-void cover_switch_cluster_on_button_press(zigbee_cover_switch_cluster *cluster) {
+void cover_switch_cluster_on_button_press(void *arg) {
+    zigbee_cover_switch_cluster *cluster = arg;
     if (cluster->open_button->pressed && cluster->close_button->pressed) {
         cover_switch_cluster_update_present_value(cluster, MULTISTATE_STOP);
     }else if (cluster->open_button->pressed) {
@@ -203,7 +204,8 @@ void cover_switch_cluster_on_button_press(zigbee_cover_switch_cluster *cluster) 
     }
 }
 
-void cover_switch_cluster_on_button_long_press(zigbee_cover_switch_cluster *cluster) {
+void cover_switch_cluster_on_button_long_press(void *arg) {
+    zigbee_cover_switch_cluster *cluster = arg;
     if (cluster->switch_type == ZCL_COVER_SWITCH_TYPE_TOGGLE) {
         // Toggle does not support long press
         return;
@@ -227,7 +229,8 @@ void cover_switch_cluster_on_button_long_press(zigbee_cover_switch_cluster *clus
     }
 }
 
-void cover_switch_cluster_on_button_release(zigbee_cover_switch_cluster *cluster) {
+void cover_switch_cluster_on_button_release(void *arg) {
+    zigbee_cover_switch_cluster *cluster = arg;
     if (!cluster->open_button->pressed && !cluster->close_button->pressed) {
         uint8_t action = cluster->switch_type ==
                          ZCL_COVER_SWITCH_TYPE_TOGGLE ? MULTISTATE_STOP : MULTISTATE_RELEASED;
@@ -324,6 +327,10 @@ void cover_switch_cluster_on_write_attr(zigbee_cover_switch_cluster *cluster,
 
 void cover_switch_cluster_callback_attr_write_trampoline(uint8_t endpoint,
                                                          uint16_t attribute_id) {
+    if (endpoint == 0 || endpoint > HAL_ZIGBEE_MAX_APP_ENDPOINTS ||
+        !cover_switch_cluster_by_endpoint[endpoint]) {
+        return;
+    }
     cover_switch_cluster_on_write_attr(cover_switch_cluster_by_endpoint[endpoint],
                                        attribute_id);
 }
@@ -347,25 +354,27 @@ void cover_switch_cluster_init(zigbee_cover_switch_cluster *cluster) {
 
 void cover_switch_cluster_add_to_endpoint(zigbee_cover_switch_cluster *cluster,
                                           hal_zigbee_endpoint *endpoint) {
+    if (!cluster || !endpoint || endpoint->endpoint == 0 ||
+        endpoint->endpoint > HAL_ZIGBEE_MAX_APP_ENDPOINTS) return;
     cover_switch_cluster_by_endpoint[endpoint->endpoint] = cluster;
     cluster->endpoint = endpoint->endpoint;
     cover_switch_cluster_init(cluster);
     cover_switch_cluster_load_attrs_from_nv(cluster);
 
     cluster->open_button->on_press =
-        (ev_button_callback_t)cover_switch_cluster_on_button_press;
+        cover_switch_cluster_on_button_press;
     cluster->open_button->on_release =
-        (ev_button_callback_t)cover_switch_cluster_on_button_release;
+        cover_switch_cluster_on_button_release;
     cluster->open_button->on_long_press =
-        (ev_button_callback_t)cover_switch_cluster_on_button_long_press;
+        cover_switch_cluster_on_button_long_press;
     cluster->open_button->callback_param = cluster;
 
     cluster->close_button->on_press =
-        (ev_button_callback_t)cover_switch_cluster_on_button_press;
+        cover_switch_cluster_on_button_press;
     cluster->close_button->on_release =
-        (ev_button_callback_t)cover_switch_cluster_on_button_release;
+        cover_switch_cluster_on_button_release;
     cluster->close_button->on_long_press =
-        (ev_button_callback_t)cover_switch_cluster_on_button_long_press;
+        cover_switch_cluster_on_button_long_press;
     cluster->close_button->callback_param = cluster;
 
     // Configuration attributes on CoverSwitchConfig SERVER cluster (manufacturer-specific)

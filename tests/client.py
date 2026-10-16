@@ -1,4 +1,5 @@
 import queue
+from collections import deque
 import re
 import subprocess
 import sys
@@ -43,6 +44,8 @@ class StubProc:
         self._reader_thread: threading.Thread | None = None
         self._stderr_forward_thread: threading.Thread | None = None
         self.on_event: list[Callable[[Event], None]] = []
+        self.stdout_lines = deque(maxlen=256)
+        self.stderr_lines = deque(maxlen=256)
 
     def __enter__(self) -> "StubProc":
         return self.start()
@@ -69,19 +72,36 @@ class StubProc:
         self.exec("machine on", timeout=2.0)
         return self
 
-    def stop(self, kill_after: float = 0.02) -> None:
-        if not self.proc or not self.is_running():
+    def stop(self, kill_after: float = 1.0) -> None:
+        proc = self.proc
+        if proc is None:
             return
-        try:
-            self.exec("q", timeout=0.2)
-        except Exception:
-            pass
-        try:
-            self.proc.wait(timeout=kill_after)
-        except subprocess.TimeoutExpired:
-            self.proc.kill()
-            self.proc.wait()
+        if proc.poll() is None:
+            try:
+                self.exec("q", timeout=0.2)
+            except (OSError, TimeoutError):
+                pass
+            try:
+                proc.wait(timeout=kill_after)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()
+        # Drain both pipes before pytest closes/replaces its captured streams.
+        for reader in (self._reader_thread, self._stderr_forward_thread):
+            if reader is not None:
+                reader.join(timeout=2.0)
+                if reader.is_alive():
+                    raise RuntimeError("Stub output reader did not finish")
+        for line in self.stdout_lines:
+            print(line, file=sys.stdout)
+        for line in self.stderr_lines:
+            print(line, file=sys.stderr)
+        for stream in (proc.stdin, proc.stdout, proc.stderr):
+            if stream is not None:
+                stream.close()
         self.proc = None
+        if proc.returncode != 0:
+            raise RuntimeError(f"Stub exited unsuccessfully: {proc.returncode}")
 
     def is_running(self) -> bool:
         return self.proc is not None and self.proc.poll() is None
@@ -99,16 +119,14 @@ class StubProc:
         assert self.proc and self.proc.stderr
 
         for line in self.proc.stderr:
-            print(line.rstrip(), file=sys.stderr)
+            self.stderr_lines.append(line.rstrip())
 
     def _read_loop(self) -> None:
         assert self.proc and self.proc.stdout and self.proc.stderr
 
         for raw in self.proc.stdout:
             line = raw.rstrip("\n")
-            print(line.rstrip(), file=sys.stdout)
-            if "RES" in line:
-                print("!")  # mark RES lines in output
+            self.stdout_lines.append(line)
             m = _RES_RE.match(line)
             if m:
                 ok = m.group(1) == "OK"
@@ -154,4 +172,4 @@ class StubProc:
         try:
             return self._res_q.get(timeout=timeout)
         except queue.Empty:
-            raise TimeoutError(f"Timeout waiting for response to: {cmd}")
+            raise TimeoutError(f"Timeout waiting for response to: {cmd}\n" + "\n".join(self.stderr_lines))

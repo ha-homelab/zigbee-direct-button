@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* Application endpoint IDs are one-based; reserve slot zero in direct maps. */
+#define HAL_ZIGBEE_MAX_APP_ENDPOINTS 10
+
 /** Zigbee attribute access permissions */
 typedef enum {
     ATTR_READONLY,

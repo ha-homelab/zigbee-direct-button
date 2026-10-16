@@ -13,6 +13,10 @@ const uint16_t battery_cluster_revision = 0x01;
 
 #define BATTERY_REFRESH_INTERVAL_MS    300000   // 5 minutes
 
+static void battery_refresh_handler(void *arg) {
+    battery_cluster_update(arg);
+}
+
 void battery_cluster_add_to_endpoint(zigbee_battery_cluster *cluster,
                                      hal_zigbee_endpoint *endpoint) {
     cluster->endpoint = endpoint->endpoint;
@@ -36,7 +40,7 @@ void battery_cluster_add_to_endpoint(zigbee_battery_cluster *cluster,
     endpoint->cluster_count++;
 
     // Initial battery reading
-    cluster->refresh_values_task.handler = (task_handler_t)battery_cluster_update;
+    cluster->refresh_values_task.handler = battery_refresh_handler;
     cluster->refresh_values_task.arg     = cluster;
     hal_tasks_init(&cluster->refresh_values_task);
 
