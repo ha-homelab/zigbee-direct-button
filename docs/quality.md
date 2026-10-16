@@ -8,6 +8,8 @@ CI runs both ordinary and AddressSanitizer/UndefinedBehaviorSanitizer host varia
 
 The Linux UBSan job additionally detected incompatible callback function-pointer types that the Apple-host sanitizer did not diagnose. Button, relay and timer callbacks now use their actual `void *` parameter contract; the battery timer adapts to the typed public update function. The existing event, battery and latching-relay regression suites exercise these paths. Linux sanitizer qualification remains required independently of the 309-test macOS run.
 
+The host NVM writer creates files with owner-only `0600` permissions even under a permissive umask, tightens older files before replacing their data, and rejects symlink and non-regular final destinations. Run the simulator in a private, trusted working directory; this is not a guarantee against hostile parent directories, hard links or concurrent filesystem replacement. Four compiled-C regression cases cover new/existing file permissions, symlinks and FIFOs.
+
 The [license assessment](license-assessment.md) preserves the nonstandard permissive upstream grant and separates the SDK's source inventory from linked prebuilt libraries. A complete firmware FLOSS claim and complete dependency-vulnerability assessment remain unestablished. The full commissioning, OTA authenticity, key-length and key-lifecycle profile is also unqualified. Do not substitute HTTPS source delivery or a source-only scanner result for those full-system requirements.
 
 A public GitHub issue/private-report inventory and maintainer attestations are separate evidence. No physical acceptance, new stable release, full coverage percentage or backup maintainer is inferred from these changes.
