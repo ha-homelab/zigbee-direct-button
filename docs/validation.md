@@ -16,7 +16,7 @@ The image was compiled on Linux amd64 using the pinned source/SDK/compiler. Its 
 
 ### Shared-source maintenance checks (2026-10-16)
 
-A later Clang ASan/UBSan run passes 301 host/helper tests with Python warnings treated as errors. It includes the endpoint-map and cluster-budget fixes, both host variants with battery/poll-control combinations, and GitHub OTA URL parsing. These changes have not been compiled into a new target firmware or physically accepted. The installed-version observations below still describe the earlier reference build.
+A later Clang ASan/UBSan run passes 309 host/helper tests with Python warnings treated as errors. It includes the endpoint-map and cluster-budget fixes, both host variants with battery/poll-control combinations, and GitHub OTA URL parsing. These changes have not been compiled into a new target firmware or physically accepted. The installed-version observations below still describe the earlier reference build.
 
 ### Installed firmware and device configuration
 

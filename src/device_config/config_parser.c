@@ -481,9 +481,14 @@ char *seek_until(char *cursor, char needle) {
 char *extract_next_entry(char **cursor) {
     char *end = seek_until(*cursor, ';');
 
-    *end = '\0';
     char *res = *cursor;
-    *cursor = end + 1;
+    if (*end == ';') {
+        *end = '\0';
+        *cursor = end + 1;
+    } else {
+        // Do not advance beyond (or later rewrite) the real terminator.
+        *cursor = end;
+    }
     return(res);
 }
 

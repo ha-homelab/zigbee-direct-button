@@ -1,4 +1,5 @@
 #include "config_nv.h"
+#include "reset.h"
 #include "hal/nvm.h"
 #include "hal/printf_selector.h"
 #include "nvm_items.h"
@@ -21,7 +22,17 @@ const char default_config_data[] = STRINGIFY(DEFAULT_CONFIG);
 
 device_config_str_t device_config_str;
 
+static void validate_and_terminate_config(void) {
+    if (device_config_str.size >= sizeof(device_config_str.data) ||
+        memchr(device_config_str.data, '\0', device_config_str.size) != NULL) {
+        printf("Invalid configuration string length or embedded NUL\r\n");
+        reset_all();
+    }
+    device_config_str.data[device_config_str.size] = '\0';
+}
+
 void device_config_write_to_nv() {
+    validate_and_terminate_config();
     printf("Writing config to nv: %s\r\n", device_config_str.data);
     hal_nvm_status_t st = 0;
 
@@ -48,11 +59,16 @@ void device_config_read_from_nv() {
         printf("Failed to read NV_ITEM_DEVICE_CONFIG, using default config "
                "instead, status: %d. (bytes: %d)\r\n",
                st, device_config_str.size);
+        if (sizeof(default_config_data) > sizeof(device_config_str.data)) {
+            printf("Default configuration is too long\r\n");
+            reset_all();
+        }
         memcpy(device_config_str.data, default_config_data,
                sizeof(default_config_data));
         device_config_str.size = strlen((const char *)default_config_data);
     }
 
+    validate_and_terminate_config();
     printf("Using config: %d chars from\r\n%s\r\n", device_config_str.size,
            device_config_str.data);
 }

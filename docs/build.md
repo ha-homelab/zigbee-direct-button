@@ -72,6 +72,6 @@ the upstream snapshot's 8.4.2. Version 9.0.3 addresses the temporary-directory
 handling issue described in [GHSA-6w46-j5rx-g56g](https://github.com/advisories/GHSA-6w46-j5rx-g56g).
 This changes the host test runner only; it does not change firmware source,
 compiler settings, or previously published firmware artifacts. The historical 262-test repository suite was validated against the updated runner.
-The 2026-10-16 shared-memory and URL fixes bring the suite to 301 tests;
+The 2026-10-16 shared-memory and URL fixes bring the suite to 309 tests;
 Clang ASan/UBSan passes all of them with Python warnings treated as errors.
 See [quality boundaries](quality.md); this host run did not rebuild radio firmware.

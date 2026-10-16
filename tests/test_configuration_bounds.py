@@ -55,3 +55,40 @@ def test_full_endpoint_cluster_budget(binary_name, battery, entries, tmp_path):
     assert "Config parsed successfully" in result.stdout
     assert "AddressSanitizer" not in result.stderr
     assert "runtime error:" not in result.stderr
+
+
+@pytest.mark.parametrize("binary_name", ["stub_device", "stub_end_device"])
+def test_full_length_attribute_write_rejected_before_terminator(binary_name, tmp_path):
+    binary = Path("build/stub", binary_name).resolve()
+    result = subprocess.run(
+        [str(binary), "--device-config", "X;Y;SA0u;"],
+        input="zcl_write 1 0000 ff00 " + "A" * 128 + "\nq\n",
+        cwd=tmp_path, capture_output=True, text=True, timeout=5,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Invalid configuration string length or embedded NUL" in result.stdout
+    assert "Writing config to nv:" not in result.stdout
+    assert "runtime error:" not in result.stderr
+    assert "AddressSanitizer" not in result.stderr
+
+
+@pytest.mark.parametrize("binary_name", ["stub_device", "stub_end_device"])
+@pytest.mark.parametrize("size,data", [
+    (128, b"A" * 128), (65535, b"X;Y;" + b"A" * 124),
+    (8, b"X;Y;\x00BAD" + b"A" * 120),
+])
+def test_corrupt_persisted_config_rejected_before_string_read(binary_name, size, data, tmp_path):
+    import struct
+    binary = Path("build/stub", binary_name).resolve()
+    nvm = tmp_path / "stub_nvm_data"
+    nvm.mkdir()
+    (nvm / "item_02.bin").write_bytes(struct.pack("<H", size) + data)
+    result = subprocess.run(
+        [str(binary)], input="q\n", cwd=tmp_path,
+        capture_output=True, text=True, timeout=5,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Invalid configuration string length or embedded NUL" in result.stdout
+    assert "Using config:" not in result.stdout
+    assert "runtime error:" not in result.stderr
+    assert "AddressSanitizer" not in result.stderr
