@@ -14,6 +14,10 @@ The hold-to-off patch passed **243 host simulation tests**, including **12 new c
 
 The image was compiled on Linux amd64 using the pinned source/SDK/compiler. Its 151,698-byte OTA file passed identity, length, embedded version, boot marker, CRC, and size-limit checks.
 
+### Shared-source maintenance checks (2026-10-16)
+
+A later Clang ASan/UBSan run passes 301 host/helper tests with Python warnings treated as errors. It includes the endpoint-map and cluster-budget fixes, both host variants with battery/poll-control combinations, and GitHub OTA URL parsing. These changes have not been compiled into a new target firmware or physically accepted. The installed-version observations below still describe the earlier reference build.
+
 ### Installed firmware and device configuration
 
 The third normal-update attempt succeeded after a controlled five-second battery removal, reinsertion, and immediate large-key press to start within the startup fast-poll window. The [upgrade runbook](upgrade.md#start-within-the-startup-fast-poll-window) explains this procedure and why it must only be used when no previous install or payload transfer is active.
