@@ -24,3 +24,7 @@ The file inventory identifies the covered SDK files as `TELINK_APACHE`; the sour
 ## Build tools and Python dependencies
 
 The TC32 GCC toolchain is downloaded separately from the URL in `src/telink/tools.mk`, verified by the checksum in `PROVENANCE.json`, and not distributed by this repository. GCC, its runtime libraries, and other toolchain components carry their own notices/licenses in the toolchain distribution. Docker base packages and dependencies listed in `requirements.txt` also retain their respective licenses. The application license does not relicense those dependencies.
+
+## Unresolved linked-library scope
+
+The application links `libdrivers_8258.a` and `libzb_ed.a`, whose paths are not in the retained SDK file-level license inventory. The exact redistribution/corresponding-source status of those prebuilt objects still requires authoritative review. See [license assessment](docs/license-assessment.md); no complete firmware FLOSS claim is made.

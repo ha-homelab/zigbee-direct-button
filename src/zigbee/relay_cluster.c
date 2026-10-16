@@ -36,16 +36,20 @@ void relay_cluster_handle_startup_mode(zigbee_relay_cluster *cluster);
 
 void sync_indicator_led(zigbee_relay_cluster *cluster);
 
-zigbee_relay_cluster *relay_cluster_by_endpoint[10];
+zigbee_relay_cluster *relay_cluster_by_endpoint[HAL_ZIGBEE_MAX_APP_ENDPOINTS + 1];
 
 void relay_cluster_callback_attr_write_trampoline(uint8_t endpoint,
                                                   uint16_t attribute_id) {
+    if (endpoint == 0 || endpoint > HAL_ZIGBEE_MAX_APP_ENDPOINTS ||
+        !relay_cluster_by_endpoint[endpoint]) {
+        return;
+    }
     relay_cluster_on_write_attr(relay_cluster_by_endpoint[endpoint],
                                 attribute_id);
 }
 
 void update_relay_clusters() {
-    for (int i = 0; i < 10; i++) {
+    for (int i = 1; i <= HAL_ZIGBEE_MAX_APP_ENDPOINTS; i++) {
         if (relay_cluster_by_endpoint[i] != NULL) {
             sync_indicator_led(relay_cluster_by_endpoint[i]);
         }
@@ -54,6 +58,8 @@ void update_relay_clusters() {
 
 void relay_cluster_add_to_endpoint(zigbee_relay_cluster *cluster,
                                    hal_zigbee_endpoint *endpoint) {
+    if (!cluster || !endpoint || endpoint->endpoint == 0 ||
+        endpoint->endpoint > HAL_ZIGBEE_MAX_APP_ENDPOINTS) return;
     relay_cluster_by_endpoint[endpoint->endpoint] = cluster;
     cluster->endpoint = endpoint->endpoint;
     relay_cluster_load_attrs_from_nv(cluster);
@@ -98,6 +104,10 @@ hal_zigbee_cmd_result_t relay_cluster_callback_trampoline(uint8_t endpoint,
                                                           uint8_t command_id,
                                                           void *cmd_payload,
                                                           uint16_t cmd_payload_len) {
+    if (endpoint == 0 || endpoint > HAL_ZIGBEE_MAX_APP_ENDPOINTS ||
+        !relay_cluster_by_endpoint[endpoint]) {
+        return HAL_ZIGBEE_CMD_SKIPPED;
+    }
     return relay_cluster_callback(relay_cluster_by_endpoint[endpoint], command_id,
                                   cmd_payload, cmd_payload_len);
 }
@@ -133,6 +143,10 @@ hal_zigbee_cmd_result_t relay_cluster_level_callback_trampoline(uint8_t endpoint
                                                                 uint8_t command_id,
                                                                 void *cmd_payload,
                                                                 uint16_t cmd_payload_len) {
+    if (endpoint == 0 || endpoint > HAL_ZIGBEE_MAX_APP_ENDPOINTS ||
+        !relay_cluster_by_endpoint[endpoint]) {
+        return HAL_ZIGBEE_CMD_SKIPPED;
+    }
     return relay_cluster_level_callback(relay_cluster_by_endpoint[endpoint], command_id,
                                         cmd_payload, cmd_payload_len);
 }

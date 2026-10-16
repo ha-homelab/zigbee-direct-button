@@ -77,6 +77,13 @@ CFLAGS := -Wall -Wno-unused-parameter -Wno-unused-variable -g -O0 \
 
 LDFLAGS := -lpthread
 
+# Optional host-only instrumentation; target firmware flags are unaffected.
+SANITIZERS ?=
+ifneq ($(strip $(SANITIZERS)),)
+CFLAGS += -fsanitize=$(SANITIZERS) -fno-omit-frame-pointer
+LDFLAGS += -fsanitize=$(SANITIZERS)
+endif
+
 # Build targets
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)

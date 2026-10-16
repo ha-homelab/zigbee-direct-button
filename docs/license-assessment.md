@@ -1,0 +1,7 @@
+# License assessment and distribution scope
+
+The root [LICENSE](../LICENSE) preserves the upstream project's actual grant. It allows use, copying, modification, distribution, sublicensing and sale without restriction, with a warranty disclaimer. It is a nonstandard permissive grant, not the standard MIT text, and this project does not claim it is an OSI-approved named license merely because GitHub displays “Other”. Original upstream attribution and provenance remain in [third-party notices](../THIRD_PARTY_NOTICES.md).
+
+The Telink SDK V3.7.2.0 contains an Apache-2.0 license and a file-level `TELINK_APACHE` inventory retained under `licenses/`. The application links `libdrivers_8258.a` and `libzb_ed.a`. Those archive paths are absent from the retained file-level inventory; presence of a top-level license is not a completed corresponding-source or redistribution assessment for every linked object. The complete published firmware therefore remains an unresolved FLOSS/third-party-scope assessment. Do not relabel those components or infer that the application's grant covers them.
+
+The checksum-pinned compiler is a separate downloaded tool distribution, not included as application source. Its GCC/runtime licenses remain separate. No owner attestation can relicense third-party components. Resolve these boundaries from authoritative upstream material before asserting complete firmware license conformity or publishing a new firmware bundle.

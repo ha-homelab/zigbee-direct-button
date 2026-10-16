@@ -24,6 +24,8 @@
 #include "hal/zigbee.h"
 #include "hal/zigbee_ota.h"
 
+#define ARRAY_CAPACITY(array) (sizeof(array) / sizeof((array)[0]))
+
 // Forward declarations
 void peripherals_init(void);
 
@@ -62,8 +64,11 @@ uint8_t cover_switch_clusters_cnt = 0;
 zigbee_cover_cluster cover_clusters[3];
 uint8_t cover_clusters_cnt = 0;
 
-hal_zigbee_cluster  clusters[32];
-hal_zigbee_endpoint endpoints[10];
+// Every endpoint needs at most three entries, plus a fourth for each switch.
+// Reserve basic, OTA, battery and end-device poll-control entries as well.
+hal_zigbee_cluster clusters[3 * HAL_ZIGBEE_MAX_APP_ENDPOINTS +
+                            ARRAY_CAPACITY(switch_clusters) + 4];
+hal_zigbee_endpoint endpoints[HAL_ZIGBEE_MAX_APP_ENDPOINTS];
 
 uint8_t allow_simultaneous_latching_pulses = 0;
 uint8_t relay_pulse_ms = 100;
@@ -86,6 +91,13 @@ void on_multi_press_reset(void *_, uint8_t press_count) {
     if (g_multi_press_reset_count != 0 &&
         press_count >= g_multi_press_reset_count) {
         hal_factory_reset();
+    }
+}
+
+static void require_room(size_t used, size_t additional, size_t capacity) {
+    if (used > capacity || additional > capacity - used) {
+        printf("Configuration capacity exceeded\r\n");
+        reset_all();
     }
 }
 
@@ -134,6 +146,7 @@ void parse_config() {
             battery.pin = pin;
             battery_init(&battery);
         } else if (entry[0] == 'B') {
+            require_room(buttons_cnt, 1, ARRAY_CAPACITY(buttons));
             hal_gpio_pin_t  pin  = hal_gpio_parse_pin(entry + 1);
             hal_gpio_pull_t pull = hal_gpio_parse_pull(entry + 3);
             hal_gpio_init(pin, 1, pull);
@@ -145,6 +158,7 @@ void parse_config() {
             buttons[buttons_cnt].on_long_press           = on_reset_clicked;
             buttons_cnt++;
         } else if (entry[0] == 'L') {
+            require_room(leds_cnt, 1, ARRAY_CAPACITY(leds));
             hal_gpio_pin_t pin = hal_gpio_parse_pin(entry + 1);
             hal_gpio_init(pin, 0, HAL_GPIO_PULL_NONE);
             leds[leds_cnt].pin     = pin;
@@ -159,6 +173,7 @@ void parse_config() {
             has_dedicated_status_led = true;
             leds_cnt++;
         } else if (entry[0] == 'I') {
+            require_room(leds_cnt, 1, ARRAY_CAPACITY(leds));
             hal_gpio_pin_t pin = hal_gpio_parse_pin(entry + 1);
             hal_gpio_init(pin, 0, HAL_GPIO_PULL_NONE);
             leds[leds_cnt].pin     = pin;
@@ -189,6 +204,8 @@ void parse_config() {
             }
             leds_cnt++;
         } else if (entry[0] == 'S') {
+            require_room(buttons_cnt, 1, ARRAY_CAPACITY(buttons));
+            require_room(switch_clusters_cnt, 1, ARRAY_CAPACITY(switch_clusters));
             hal_gpio_pin_t  pin  = hal_gpio_parse_pin(entry + 1);
             hal_gpio_pull_t pull = hal_gpio_parse_pull(entry + 3);
             hal_gpio_init(pin, 1, pull);
@@ -216,6 +233,8 @@ void parse_config() {
             buttons_cnt++;
             switch_clusters_cnt++;
         } else if (entry[0] == 'R') {
+            require_room(relays_cnt, 1, ARRAY_CAPACITY(relays));
+            require_room(relay_clusters_cnt, 1, ARRAY_CAPACITY(relay_clusters));
             hal_gpio_pin_t pin = hal_gpio_parse_pin(entry + 1);
             hal_gpio_init(pin, 0, HAL_GPIO_PULL_NONE);
 
@@ -235,6 +254,8 @@ void parse_config() {
             relays_cnt++;
             relay_clusters_cnt++;
         } else if (entry[0] == 'X') {
+            require_room(buttons_cnt, 2, ARRAY_CAPACITY(buttons));
+            require_room(cover_switch_clusters_cnt, 1, ARRAY_CAPACITY(cover_switch_clusters));
             hal_gpio_pin_t  open_pin  = hal_gpio_parse_pin(entry + 1);
             hal_gpio_pin_t  close_pin = hal_gpio_parse_pin(entry + 3);
             hal_gpio_pull_t pull      = hal_gpio_parse_pull(entry + 5);
@@ -264,6 +285,8 @@ void parse_config() {
                 cover_switch_clusters_cnt;
             cover_switch_clusters_cnt++;
         } else if (entry[0] == 'C') {
+            require_room(relays_cnt, 2, ARRAY_CAPACITY(relays));
+            require_room(cover_clusters_cnt, 1, ARRAY_CAPACITY(cover_clusters));
             hal_gpio_pin_t open_pin  = hal_gpio_parse_pin(entry + 1);
             hal_gpio_pin_t close_pin = hal_gpio_parse_pin(entry + 3);
 
@@ -304,6 +327,17 @@ void parse_config() {
 
     uint8_t total_endpoints = switch_clusters_cnt + relay_clusters_cnt +
                               cover_switch_clusters_cnt + cover_clusters_cnt;
+
+    require_room(0, total_endpoints, ARRAY_CAPACITY(endpoints));
+    size_t required_clusters = 2 + 4 * switch_clusters_cnt +
+                               3 * relay_clusters_cnt +
+                               3 * cover_switch_clusters_cnt + cover_clusters_cnt;
+    if (battery.pin != HAL_INVALID_PIN)
+        required_clusters++;
+#ifdef END_DEVICE
+    required_clusters++;
+#endif
+    require_room(0, required_clusters, ARRAY_CAPACITY(clusters));
 
     hal_zigbee_cluster *cluster_ptr = clusters;
 

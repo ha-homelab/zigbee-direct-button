@@ -32,7 +32,7 @@ void switch_cluster_on_button_long_press(zigbee_switch_cluster *cluster);
 static bool switch_cluster_has_valid_relay(
     const zigbee_switch_cluster *cluster);
 
-zigbee_switch_cluster *switch_cluster_by_endpoint[10];
+zigbee_switch_cluster *switch_cluster_by_endpoint[HAL_ZIGBEE_MAX_APP_ENDPOINTS + 1];
 
 static void sync_switch_indicator_led(zigbee_switch_cluster *cluster) {
     if (cluster->indicator_led == NULL) {
@@ -82,12 +82,18 @@ void switch_cluster_report_action(zigbee_switch_cluster *cluster);
 
 void switch_cluster_callback_attr_write_trampoline(uint8_t endpoint,
                                                    uint16_t attribute_id) {
+    if (endpoint == 0 || endpoint > HAL_ZIGBEE_MAX_APP_ENDPOINTS ||
+        !switch_cluster_by_endpoint[endpoint]) {
+        return;
+    }
     switch_cluster_on_write_attr(switch_cluster_by_endpoint[endpoint],
                                  attribute_id);
 }
 
 void switch_cluster_add_to_endpoint(zigbee_switch_cluster *cluster,
                                     hal_zigbee_endpoint *endpoint) {
+    if (!cluster || !endpoint || endpoint->endpoint == 0 ||
+        endpoint->endpoint > HAL_ZIGBEE_MAX_APP_ENDPOINTS) return;
     switch_cluster_by_endpoint[endpoint->endpoint] = cluster;
     cluster->endpoint = endpoint->endpoint;
     switch_cluster_load_attrs_from_nv(cluster);

@@ -11,6 +11,7 @@ SDK_VERSION := 3.7.2.0
 SDK_REPO := https://github.com/telink-semi/telink_zigbee_sdk
 SDK_ARCHIVE := V$(SDK_VERSION).zip
 SDK_URL := $(SDK_REPO)/archive/refs/tags/$(SDK_ARCHIVE)
+SDK_CHECKSUM := 77ca35173fc9d6c4fc8a6f6a97bd601d66c7a607a5c89e3012c138736ae0c049
 
 # Telink toolchain URL
 TOOLCHAIN_URL := https://shyboy.oss-cn-shenzhen.aliyuncs.com/readonly/tc32_gcc_v2.0.tar.bz2
@@ -80,6 +81,7 @@ $(TOOLS_DIR)/sdk: | $(DOWNLOAD_DIR)
 			}; \
 		fi; \
 	fi
+	@echo "$(SDK_CHECKSUM) $(DOWNLOAD_DIR)/$(SDK_ARCHIVE)" | sha256sum -c -
 	@echo "Extracting Telink Zigbee SDK..."
 	@rm -rf $(TOOLS_DIR)/sdk
 	@mkdir -p $(TOOLS_DIR)/sdk_temp
