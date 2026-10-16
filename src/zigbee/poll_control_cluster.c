@@ -310,7 +310,7 @@ void poll_control_cluster_add_to_endpoint(zigbee_poll_control_cluster *cluster,
     enter_fast_poll(cluster, cluster->fast_poll_timeout);
 
     // Schedule check-in timer
-    cluster->check_in_task.handler = (task_handler_t)check_in_handler;
+    cluster->check_in_task.handler = check_in_handler;
     cluster->check_in_task.arg     = cluster;
     hal_tasks_init(&cluster->check_in_task);
     if (cluster->check_in_interval != 0) {

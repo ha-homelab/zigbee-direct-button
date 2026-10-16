@@ -187,7 +187,8 @@ void cover_switch_cluster_update_present_value(zigbee_cover_switch_cluster *clus
     }
 }
 
-void cover_switch_cluster_on_button_press(zigbee_cover_switch_cluster *cluster) {
+void cover_switch_cluster_on_button_press(void *arg) {
+    zigbee_cover_switch_cluster *cluster = arg;
     if (cluster->open_button->pressed && cluster->close_button->pressed) {
         cover_switch_cluster_update_present_value(cluster, MULTISTATE_STOP);
     }else if (cluster->open_button->pressed) {
@@ -203,7 +204,8 @@ void cover_switch_cluster_on_button_press(zigbee_cover_switch_cluster *cluster) 
     }
 }
 
-void cover_switch_cluster_on_button_long_press(zigbee_cover_switch_cluster *cluster) {
+void cover_switch_cluster_on_button_long_press(void *arg) {
+    zigbee_cover_switch_cluster *cluster = arg;
     if (cluster->switch_type == ZCL_COVER_SWITCH_TYPE_TOGGLE) {
         // Toggle does not support long press
         return;
@@ -227,7 +229,8 @@ void cover_switch_cluster_on_button_long_press(zigbee_cover_switch_cluster *clus
     }
 }
 
-void cover_switch_cluster_on_button_release(zigbee_cover_switch_cluster *cluster) {
+void cover_switch_cluster_on_button_release(void *arg) {
+    zigbee_cover_switch_cluster *cluster = arg;
     if (!cluster->open_button->pressed && !cluster->close_button->pressed) {
         uint8_t action = cluster->switch_type ==
                          ZCL_COVER_SWITCH_TYPE_TOGGLE ? MULTISTATE_STOP : MULTISTATE_RELEASED;
@@ -359,19 +362,19 @@ void cover_switch_cluster_add_to_endpoint(zigbee_cover_switch_cluster *cluster,
     cover_switch_cluster_load_attrs_from_nv(cluster);
 
     cluster->open_button->on_press =
-        (ev_button_callback_t)cover_switch_cluster_on_button_press;
+        cover_switch_cluster_on_button_press;
     cluster->open_button->on_release =
-        (ev_button_callback_t)cover_switch_cluster_on_button_release;
+        cover_switch_cluster_on_button_release;
     cluster->open_button->on_long_press =
-        (ev_button_callback_t)cover_switch_cluster_on_button_long_press;
+        cover_switch_cluster_on_button_long_press;
     cluster->open_button->callback_param = cluster;
 
     cluster->close_button->on_press =
-        (ev_button_callback_t)cover_switch_cluster_on_button_press;
+        cover_switch_cluster_on_button_press;
     cluster->close_button->on_release =
-        (ev_button_callback_t)cover_switch_cluster_on_button_release;
+        cover_switch_cluster_on_button_release;
     cluster->close_button->on_long_press =
-        (ev_button_callback_t)cover_switch_cluster_on_button_long_press;
+        cover_switch_cluster_on_button_long_press;
     cluster->close_button->callback_param = cluster;
 
     // Configuration attributes on CoverSwitchConfig SERVER cluster (manufacturer-specific)

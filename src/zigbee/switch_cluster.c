@@ -26,9 +26,9 @@ extern uint8_t relay_clusters_cnt;
 extern zigbee_switch_cluster switch_clusters[];
 extern uint8_t switch_clusters_cnt;
 
-void switch_cluster_on_button_press(zigbee_switch_cluster *cluster);
-void switch_cluster_on_button_release(zigbee_switch_cluster *cluster);
-void switch_cluster_on_button_long_press(zigbee_switch_cluster *cluster);
+void switch_cluster_on_button_press(void *arg);
+void switch_cluster_on_button_release(void *arg);
+void switch_cluster_on_button_long_press(void *arg);
 static bool switch_cluster_has_valid_relay(
     const zigbee_switch_cluster *cluster);
 
@@ -99,11 +99,11 @@ void switch_cluster_add_to_endpoint(zigbee_switch_cluster *cluster,
     switch_cluster_load_attrs_from_nv(cluster);
 
     cluster->button->on_press =
-        (ev_button_callback_t)switch_cluster_on_button_press;
+        switch_cluster_on_button_press;
     cluster->button->on_release =
-        (ev_button_callback_t)switch_cluster_on_button_release;
+        switch_cluster_on_button_release;
     cluster->button->on_long_press =
-        (ev_button_callback_t)switch_cluster_on_button_long_press;
+        switch_cluster_on_button_long_press;
     cluster->button->callback_param = cluster;
 
     SETUP_ATTR(0, ZCL_ATTR_ONOFF_CONFIGURATION_SWITCH_TYPE, ZCL_DATA_TYPE_ENUM8,
@@ -347,7 +347,8 @@ void switch_cluster_level_control(zigbee_switch_cluster *cluster) {
     }
 }
 
-void switch_cluster_on_button_press(zigbee_switch_cluster *cluster) {
+void switch_cluster_on_button_press(void *arg) {
+    zigbee_switch_cluster *cluster = arg;
     switch_cluster_flash_indicator(cluster);
 
     if (cluster->mode == ZCL_ONOFF_CONFIGURATION_SWITCH_TYPE_TOGGLE) {
@@ -377,7 +378,8 @@ void switch_cluster_on_button_press(zigbee_switch_cluster *cluster) {
                                         ZCL_ATTR_MULTISTATE_INPUT_PRESENT_VALUE);
 }
 
-void switch_cluster_on_button_release(zigbee_switch_cluster *cluster) {
+void switch_cluster_on_button_release(void *arg) {
+    zigbee_switch_cluster *cluster = arg;
     if (cluster->mode == ZCL_ONOFF_CONFIGURATION_SWITCH_TYPE_TOGGLE) {
         // Only flash on release for toggles,
         // for momentary flash on press only
@@ -418,7 +420,8 @@ void switch_cluster_on_button_release(zigbee_switch_cluster *cluster) {
                                         ZCL_ATTR_MULTISTATE_INPUT_PRESENT_VALUE);
 }
 
-void switch_cluster_on_button_long_press(zigbee_switch_cluster *cluster) {
+void switch_cluster_on_button_long_press(void *arg) {
+    zigbee_switch_cluster *cluster = arg;
     if (cluster->mode == ZCL_ONOFF_CONFIGURATION_SWITCH_TYPE_TOGGLE) {
         // Toggle does not support modes (RISE, SHORT, LONG)
         return;

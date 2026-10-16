@@ -5,6 +5,7 @@
 ### Security
 
 - Bound one-based Zigbee endpoint maps, including valid endpoint 10, and reject configurations that exceed component, endpoint or cluster capacity before writing beyond their arrays. The issue was reproduced by AddressSanitizer/UndefinedBehaviorSanitizer in the shared firmware; no CVE is assigned.
+- Match callback definitions to their actual scheduler/button/relay function-pointer types, eliminating undefined calls reported by Linux UBSan without changing event timing or state transitions.
 - Validate stored and remotely written configuration lengths before reading strings or adding a terminator; keep token parsing inside the original terminator.
 - Parse GitHub remote URLs before constructing inherited OTA index URLs, rejecting misleading hosts, credentials, fragments and unexpected paths. Explicit operator-selected `--base-url` remains a separate input.
 - Verify the Telink SDK archive against the SHA-256 already recorded with the published reference build before extraction.

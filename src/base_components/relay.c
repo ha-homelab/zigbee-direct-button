@@ -14,10 +14,11 @@ extern uint8_t relay_pulse_ms;
 
 static relay_t *pulse_relay = NULL;
 
-static void relay_start_latching_pulse(relay_t *relay);
-static void relay_end_latching_pulse(relay_t *relay);
+static void relay_start_latching_pulse(void *arg);
+static void relay_end_latching_pulse(void *arg);
 
-static void relay_end_latching_pulse(relay_t *relay) {
+static void relay_end_latching_pulse(void *arg) {
+    relay_t *relay = arg;
     hal_gpio_write(relay->pin, !relay->on_high);
     hal_gpio_write(relay->off_pin, !relay->on_high);
     if (pulse_relay == relay) {
@@ -26,18 +27,19 @@ static void relay_end_latching_pulse(relay_t *relay) {
     }
 }
 
-static void relay_start_latching_pulse(relay_t *relay) {
+static void relay_start_latching_pulse(void *arg) {
+    relay_t *relay = arg;
     hal_gpio_pin_t pin = relay->on ? relay->pin : relay->off_pin;
 
     if (pulse_relay == NULL || allow_simultaneous_latching_pulses) {
         // Start new pulse
         hal_gpio_write(pin, relay->on_high);
         pulse_relay = relay;
-        relay->latching_task.handler = (task_handler_t)relay_end_latching_pulse;
+        relay->latching_task.handler = relay_end_latching_pulse;
         hal_tasks_schedule(&relay->latching_task, relay_pulse_ms);
     } else {
         printf("relay_start_latching_pulse: another pulse is active\r\n");
-        relay->latching_task.handler = (task_handler_t)relay_start_latching_pulse;
+        relay->latching_task.handler = relay_start_latching_pulse;
         hal_tasks_schedule(&relay->latching_task, relay_pulse_ms);
     }
 }

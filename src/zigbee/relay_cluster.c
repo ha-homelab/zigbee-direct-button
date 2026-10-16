@@ -25,7 +25,7 @@ hal_zigbee_cmd_result_t relay_cluster_level_callback_trampoline(uint8_t endpoint
                                                                 void *cmd_payload,
                                                                 uint16_t cmd_payload_len);
 
-void relay_cluster_on_relay_change(zigbee_relay_cluster *cluster,
+void relay_cluster_on_relay_change(void *arg,
                                    uint8_t state);
 void relay_cluster_on_write_attr(zigbee_relay_cluster *cluster,
                                  uint16_t attribute_id);
@@ -65,7 +65,7 @@ void relay_cluster_add_to_endpoint(zigbee_relay_cluster *cluster,
     relay_cluster_load_attrs_from_nv(cluster);
 
     cluster->relay->callback_param = cluster;
-    cluster->relay->on_change      = (relay_callback_t)relay_cluster_on_relay_change;
+    cluster->relay->on_change      = relay_cluster_on_relay_change;
 
     relay_cluster_handle_startup_mode(cluster);
     sync_indicator_led(cluster);
@@ -210,8 +210,9 @@ void relay_cluster_toggle(zigbee_relay_cluster *cluster) {
     sync_indicator_led(cluster);
 }
 
-void relay_cluster_on_relay_change(zigbee_relay_cluster *cluster,
+void relay_cluster_on_relay_change(void *arg,
                                    uint8_t state) {
+    zigbee_relay_cluster *cluster = arg;
     hal_zigbee_notify_attribute_changed(cluster->endpoint, ZCL_CLUSTER_ON_OFF,
                                         ZCL_ATTR_ONOFF);
     if (cluster->startup_mode == ZCL_START_UP_ONOFF_SET_ONOFF_TOGGLE ||
