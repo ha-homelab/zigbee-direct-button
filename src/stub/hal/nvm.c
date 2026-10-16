@@ -1,6 +1,7 @@
 #include "hal/nvm.h"
 #include "stub/machine_io.h"
 #include <errno.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,16 +49,33 @@ hal_nvm_status_t hal_nvm_write(uint8_t item_id, uint16_t size, uint8_t *data) {
     ensure_nvm_dir();
 
     char *filename = get_item_filename(item_id);
-    FILE *file     = fopen(filename, "wb");
+    int descriptor = open(filename, O_WRONLY | O_CREAT | O_NOFOLLOW | O_NONBLOCK,
+                          S_IRUSR | S_IWUSR);
+    if (descriptor < 0) {
+        io_log("NVM", "Failed to open file for writing: %s", filename);
+        return HAL_NVM_ERROR;
+    }
+
+    struct stat st;
+    if (fstat(descriptor, &st) != 0 || !S_ISREG(st.st_mode) ||
+        fchmod(descriptor, S_IRUSR | S_IWUSR) != 0 ||
+        ftruncate(descriptor, 0) != 0) {
+        close(descriptor);
+        io_log("NVM", "Failed to prepare private regular file: %s", filename);
+        return HAL_NVM_ERROR;
+    }
+
+    FILE *file = fdopen(descriptor, "wb");
     if (!file) {
+        close(descriptor);
         io_log("NVM", "Failed to open file for writing: %s", filename);
         return HAL_NVM_ERROR;
     }
 
     size_t written = fwrite(data, 1, size, file);
-    fclose(file);
+    int close_status = fclose(file);
 
-    if (written != size) {
+    if (written != size || close_status != 0) {
         io_log("NVM", "Failed to write all data for item %02x", item_id);
         return HAL_NVM_ERROR;
     }
