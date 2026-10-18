@@ -4,6 +4,8 @@
 
 ### Security
 
+- Restrict host-simulator NVM files to owner read/write permissions independently of umask, tighten existing files before replacing data, and reject symlinks or special files. This affects host simulation storage, not device flash.
+
 - Bound one-based Zigbee endpoint maps, including valid endpoint 10, and reject configurations that exceed component, endpoint or cluster capacity before writing beyond their arrays. The issue was reproduced by AddressSanitizer/UndefinedBehaviorSanitizer in the shared firmware; no CVE is assigned.
 - Match callback definitions to their actual scheduler/button/relay function-pointer types, eliminating undefined calls reported by Linux UBSan without changing event timing or state transitions.
 - Validate stored and remotely written configuration lengths before reading strings or adding a terminator; keep token parsing inside the original terminator.
