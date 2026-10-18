@@ -72,6 +72,10 @@ The container runs the host tests, fetches the Telink SDK and checksummed compil
 
 No network backups, live device identifiers, network addresses, access tokens, or private deployment logs belong here. [Security and privacy](SECURITY.md) explains what to keep outside Git.
 
+## Maintenance and security
+
+See [contributing](CONTRIBUTING.md), [governance](GOVERNANCE.md), [private reporting](SECURITY.md), [changes](CHANGELOG.md), and [current quality/licensing limits](docs/quality.md). Source and host-test acceptance do not establish complete firmware licensing, cryptographic qualification or physical behavior acceptance.
+
 ## Credits and scope
 
 The firmware, hardware configuration, original integrations, and test harness come from [romasku/tuya-zigbee-switch](https://github.com/romasku/tuya-zigbee-switch), pinned to `ec57f81b89e7755c4a8833cc6cb081ba3cdda227` (1.1.3). This repository carries a small behavior change and an operational guide, not a claim of authorship of the upstream project. The original [license](LICENSE) is preserved. Compiled images also incorporate Telink SDK components under their own license. See [third-party notices](THIRD_PARTY_NOTICES.md); downloaded SDK and compiler distributions are not vendored here.

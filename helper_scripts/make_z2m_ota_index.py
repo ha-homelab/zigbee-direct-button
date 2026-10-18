@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import yaml
 import subprocess
+import re
+from urllib.parse import quote, urlsplit
 
 
 BOARD_TO_MANUFACTURER_NAMES = {
@@ -98,20 +100,32 @@ def get_raw_github_link():
         # Fallback if any git command fails
         return "https://github.com/romasku/tuya-zigbee-switch/raw/refs/heads/main"
 
-    # Normalize to HTTPS GitHub URL
+    return raw_github_url(remote_url, branch)
+
+
+def raw_github_url(remote_url: str, branch: str) -> str:
+    """Derive a public GitHub raw URL without accepting embedded/credential URLs."""
+    if any(ord(char) <= 32 or ord(char) == 127 for char in remote_url):
+        raise ValueError("Git remote contains whitespace or control characters")
     if remote_url.startswith("git@github.com:"):
-        remote_url = remote_url.replace("git@github.com:", "https://github.com/")
+        remote_url = "ssh://git@github.com/" + remote_url[len("git@github.com:"):]
     elif remote_url.startswith("gh:"):
-        remote_url = remote_url.replace("gh:", "https://github.com/")
-    elif remote_url.startswith("git://github.com/"):
-        remote_url = remote_url.replace("git://", "https://")
-    elif remote_url.startswith("http:"):
-        remote_url = remote_url.replace("http:", "https:")
-
-    if remote_url.endswith(".git"):
-        remote_url = remote_url[:-4]
-
-    return f"{remote_url}/raw/refs/heads/{branch}"
+        remote_url = "https://github.com/" + remote_url[3:]
+    parsed = urlsplit(remote_url)
+    ports = {"https": 443, "http": 80, "ssh": 22, "git": 9418}
+    if (parsed.scheme not in ports or parsed.hostname != "github.com"
+            or parsed.port not in (None, ports[parsed.scheme])
+            or parsed.password or parsed.query or parsed.fragment
+            or parsed.username not in ((None, "git") if parsed.scheme == "ssh" else (None,))):
+        raise ValueError("Git remote must identify a public GitHub repository")
+    repository = parsed.path.removeprefix("/").removesuffix(".git")
+    parts = repository.split("/")
+    if (len(parts) != 2 or any(not re.fullmatch(r"[A-Za-z0-9_.-]+", part)
+                              or part in (".", "..") for part in parts)):
+        raise ValueError("Git remote must contain exactly an owner and repository")
+    if not branch or any(ord(char) < 32 or ord(char) == 127 for char in branch):
+        raise ValueError("Branch must be a nonempty Git reference")
+    return f"https://github.com/{repository}/raw/refs/heads/{quote(branch, safe='/')}"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Create Zigbee2mqtt index json",

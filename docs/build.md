@@ -59,7 +59,7 @@ The upstream download recipe uses Telink SDK **3.7.2.0** and verifies the TC32 c
 33b854be3e3db3dba4b4dacdda2cd4ea1c94dfd4d562864a095956de7991b430
 ```
 
-The SDK is selected by its upstream release tag. The published build records its SDK archive hash in `firmware/1.1.3-holdoff1/build-environment.json`; the recipe still fetches the release tag. The Docker base digest and OS package versions are not fully pinned here. Therefore this is a repeatable recipe, not a claim of bit-for-bit reproducibility. Record the output metadata and resolved build environment with each release; investigate differences rather than substituting binaries silently.
+The SDK is fetched by its upstream release tag and checked before extraction against the SHA-256 retained in `PROVENANCE.json` and `firmware/1.1.3-holdoff1/build-environment.json`. The Docker base is digest-pinned; OS package versions are not fully pinned here. Therefore this is a repeatable recipe, not a claim of bit-for-bit reproducibility. Record the output metadata and resolved build environment with each release; investigate differences rather than substituting binaries silently.
 
 Do not use broad `make setup` or a default Router build for this button. `scripts/build.sh` supplies the exact EndDevice target, pin map, OTA identity, and version. Downloaded SDK/toolchains remain outside version control.
 
@@ -71,5 +71,7 @@ The development requirements intentionally use **pytest 9.0.3**, rather than
 the upstream snapshot's 8.4.2. Version 9.0.3 addresses the temporary-directory
 handling issue described in [GHSA-6w46-j5rx-g56g](https://github.com/advisories/GHSA-6w46-j5rx-g56g).
 This changes the host test runner only; it does not change firmware source,
-compiler settings, or previously published firmware artifacts. The complete
-262-test repository suite is validated against the updated runner.
+compiler settings, or previously published firmware artifacts. The historical 262-test repository suite was validated against the updated runner.
+The 2026-10-16 shared-memory and URL fixes bring the suite to 309 tests;
+Clang ASan/UBSan passes all of them with Python warnings treated as errors.
+See [quality boundaries](quality.md); this host run did not rebuild radio firmware.
