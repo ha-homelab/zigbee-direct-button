@@ -38,9 +38,28 @@ jobs:
           bash -n scripts/build.sh
           python -m py_compile scripts/check_ota.py scripts/make_ota_index.py examples/home-assistant/tuya_direct_button.py
 
+  container:
+    name: Packaged Python runtime
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Build the shipped development image
+        run: docker build --tag zigbee-button-ci .
+      - name: Exercise firmware host builds and tests in the packaged runtime
+        run: >-
+          docker run --rm --network none --cap-drop ALL
+          --security-opt no-new-privileges zigbee-button-ci
+          bash -e -c 'make -j2 stub/build stub/build_end_device && python -m pytest tests/ -q -W error'
+
   gate:
     name: CI gate
-    needs: [test]
+    needs: [test, container]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -53,4 +72,5 @@ jobs:
       - name: Require successful host tests
         env:
           TEST_RESULT: ${{ needs.test.result }}
-        run: test "$TEST_RESULT" = success
+          CONTAINER_RESULT: ${{ needs.container.result }}
+        run: test "$TEST_RESULT" = success && test "$CONTAINER_RESULT" = success
