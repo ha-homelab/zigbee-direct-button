@@ -6,4 +6,4 @@ Read the [upgrade runbook](../../docs/upgrade.md) and [validation record](../../
 
 A post-update HA snapshot also confirms five registered native-group members, five lamp entities in the HA helper, and the old HA Toggle automation disabled. These are registration/state checks; they do not replace fresh radio acknowledgments or the pending physical acceptance tests.
 
-The application source is MIT; compiled SDK components retain the [Telink SDK license](../../licenses/TELINK-APACHE-2.0.txt). See [third-party notices](../../THIRD_PARTY_NOTICES.md).
+The application source retains the [upstream license](../../LICENSE), a nonstandard permissive grant. Compiled SDK components have separate licensing; the [license assessment](../../docs/license-assessment.md) records the unresolved scope of the linked prebuilt libraries. See [third-party notices](../../THIRD_PARTY_NOTICES.md) for the retained SDK license and file inventory.
