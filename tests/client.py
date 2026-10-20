@@ -39,6 +39,7 @@ class StubProc:
         if freeze_time:
             self.cmd += ["--freeze-time"]
         self.proc: subprocess.Popen | None = None
+        self._response_timed_out = False
         self._res_q: queue.Queue[CmdResult] = queue.Queue()
         self._evt_q: queue.Queue[Event] = queue.Queue()
         self._reader_thread: threading.Thread | None = None
@@ -54,6 +55,8 @@ class StubProc:
         self.stop()
 
     def start(self) -> "StubProc":
+        if self.proc is not None:
+            raise RuntimeError("Call stop() before starting another process")
         self.proc = subprocess.Popen(
             self.cmd,
             stdin=subprocess.PIPE,
@@ -62,6 +65,8 @@ class StubProc:
             text=True,
             bufsize=1,
         )
+        self._response_timed_out = False
+        self._res_q = queue.Queue()
         self._reader_thread = threading.Thread(target=self._read_loop, daemon=True)
         self._reader_thread.start()
         self._stderr_forward_thread = threading.Thread(
@@ -78,8 +83,12 @@ class StubProc:
             return
         if proc.poll() is None:
             try:
-                self.exec("q", timeout=0.2)
-            except (OSError, TimeoutError):
+                # Shutdown needs process exit, not another untagged response.
+                # This also works when a timed-out command desynchronized us.
+                assert proc.stdin is not None
+                proc.stdin.write("q\n")
+                proc.stdin.flush()
+            except OSError:
                 pass
             try:
                 proc.wait(timeout=kill_after)
@@ -162,6 +171,8 @@ class StubProc:
     def exec(self, cmd: str, timeout: float = 1.0) -> CmdResult:
         if not self.proc or not self.proc.stdin:
             raise RuntimeError("Process not running")
+        if self._response_timed_out:
+            raise RuntimeError("Response timed out; stop and restart the process")
         while not self._res_q.empty():
             try:
                 self._res_q.get_nowait()
@@ -172,4 +183,7 @@ class StubProc:
         try:
             return self._res_q.get(timeout=timeout)
         except queue.Empty:
+            # RES carries no request ID, so a later reply cannot be assigned
+            # safely to any subsequent command in this process.
+            self._response_timed_out = True
             raise TimeoutError(f"Timeout waiting for response to: {cmd}\n" + "\n".join(self.stderr_lines))
