@@ -13,18 +13,18 @@ SPEC.loader.exec_module(OTA)
 
 def sample():
     payload = bytearray(64)
-    payload[2:6] = (0x11033001).to_bytes(4, 'little')
+    payload[2:6] = (0x11033002).to_bytes(4, 'little')
     payload[6:8] = b'\x5d\x02'
     payload[8:12] = b'KNLT'
     payload[0x18:0x1c] = (68).to_bytes(4, 'little')
     payload += (binascii.crc32(payload) ^ 0xFFFFFFFF).to_bytes(4, 'little')
-    header = OTA.HEADER.pack(0x0BEEF11E, 0x100, 56, 0, 4417, 45636, 0x11033001, 2, b'Test', 130)
+    header = OTA.HEADER.pack(0x0BEEF11E, 0x100, 56, 0, 4417, 45636, 0x11033002, 2, b'Test', 130)
     return header + OTA.SUBELEMENT.pack(0, len(payload)) + payload
 
 
 def test_valid_image():
     info = OTA.inspect_image(sample())
-    assert info['fileVersionHex'] == '0x11033001'
+    assert info['fileVersionHex'] == '0x11033002'
     assert info['telinkCrcValid'] is True
     assert info['fileSize'] == 130
 
@@ -60,4 +60,13 @@ def test_reject_oversized_image_even_with_consistent_lengths_and_crc():
     image[86:90] = payload_len.to_bytes(4, 'little')
     image += (binascii.crc32(image[62:]) ^ 0xFFFFFFFF).to_bytes(4, 'little')
     with pytest.raises(ValueError, match='208 KiB'):
+        OTA.inspect_image(image)
+
+
+def test_previous_release_cannot_be_offered_as_the_current_beta():
+    image = bytearray(sample())
+    image[14:18] = (0x11033001).to_bytes(4, 'little')
+    image[64:68] = (0x11033001).to_bytes(4, 'little')
+    image[-4:] = (binascii.crc32(image[62:-4]) ^ 0xFFFFFFFF).to_bytes(4, 'little')
+    with pytest.raises(ValueError, match='expected TS0041-TB'):
         OTA.inspect_image(image)

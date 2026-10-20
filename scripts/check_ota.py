@@ -9,7 +9,7 @@ import struct
 
 HEADER = struct.Struct('<I5HIH32sI')
 SUBELEMENT = struct.Struct('<HI')
-EXPECTED = (4417, 45636, 0x11033001)
+EXPECTED = (4417, 45636, 0x11033002)
 
 
 def inspect_image(data: bytes) -> dict:

@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.1.3-holdoff.2-beta.1 — 2026-10-20
+
+### Firmware identity
+
+- Build fresh TS0041-TB firmware from the reviewed current sources as `1.1.3-holdoff2` / `0x11033002`. The inspector and local index reject the previous image as this candidate.
+- Preserve the opt-in binding mode, target pin map and NVM schema. Existing holdoff1 binaries and deployment records remain historical.
 
 ### Security
 
@@ -15,7 +20,7 @@
 ### Validation and documentation
 
 - Add instrumented host simulation, C/Python/Actions static analysis and Python common-error checks. Drain host-test output threads before completing cleanup.
-- Document maintenance, private reporting, licensing and complete-system assessment limits. No new target firmware, physical acceptance or device deployment is implied.
+- Document maintenance, private reporting, licensing and complete-system assessment limits. The candidate rebuilds target firmware with OTA identity `0x11033002`; no physical acceptance or device deployment is implied.
 
 ## 1.1.3-holdoff.1
 

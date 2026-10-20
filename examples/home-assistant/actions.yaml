@@ -1,5 +1,5 @@
 # Example HA action sequence. Replace every entity ID with your local entity.
-# Run only after verifying patched runtime firmware 0x11033001.
+# Run only after verifying the selected patched runtime (holdoff2 beta: 0x11033002).
 # This configures persistent button settings, not a light-control automation.
 - action: select.select_option
   target:
