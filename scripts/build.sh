@@ -22,6 +22,7 @@ make -C src/telink build ota \
   FIRMWARE_BASENAME=ts0041-hold-off-1.1.3.2
 cp build/telink/bin/ts0041-hold-off-1.1.3.2.bin "$OUTPUT_DIR/"
 cp build/telink/bin/ts0041-hold-off-1.1.3.2.ota "$OUTPUT_DIR/ts0041-hold-off-1.1.3.2.zigbee"
-python3 scripts/check_ota.py "$OUTPUT_DIR/ts0041-hold-off-1.1.3.2.zigbee" > "$OUTPUT_DIR/metadata.json"
+python3 scripts/check_ota.py "$OUTPUT_DIR/ts0041-hold-off-1.1.3.2.zigbee" \
+  --binary "$OUTPUT_DIR/ts0041-hold-off-1.1.3.2.bin" > "$OUTPUT_DIR/metadata.json"
 (cd "$OUTPUT_DIR" && sha256sum ts0041-hold-off-1.1.3.2.bin ts0041-hold-off-1.1.3.2.zigbee > SHA256SUMS)
 cat "$OUTPUT_DIR/metadata.json"

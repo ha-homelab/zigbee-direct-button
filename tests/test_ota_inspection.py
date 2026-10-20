@@ -70,3 +70,35 @@ def test_previous_release_cannot_be_offered_as_the_current_beta():
     image[-4:] = (binascii.crc32(image[62:-4]) ^ 0xFFFFFFFF).to_bytes(4, 'little')
     with pytest.raises(ValueError, match='expected TS0041-TB'):
         OTA.inspect_image(image)
+
+
+def raw_sample():
+    binary = bytearray(sample()[OTA.HEADER.size + OTA.SUBELEMENT.size:-4])
+    binary[6:8] = b'\x00\x00'
+    binary[0x18:0x1c] = len(binary).to_bytes(4, 'little')
+    return bytes(binary)
+
+
+def test_matching_raw_application_and_ota():
+    metadata = OTA.inspect_artifact_pair(raw_sample(), sample())
+    assert metadata['binarySize'] == 64
+
+
+def test_unaligned_raw_application_padding():
+    binary = raw_sample()[:-1]
+    image = bytearray(sample())
+    image[-5] = 0xff
+    image[-4:] = (binascii.crc32(image[62:-4]) ^ 0xFFFFFFFF).to_bytes(4, 'little')
+    assert OTA.inspect_artifact_pair(binary, image)['binarySize'] == 63
+
+
+def test_valid_ota_cannot_be_paired_with_another_raw_application():
+    binary = bytearray(raw_sample())
+    binary[32] ^= 1
+    with pytest.raises(ValueError, match='does not match'):
+        OTA.inspect_artifact_pair(binary, sample())
+
+
+def test_truncated_raw_application():
+    with pytest.raises(ValueError, match='Truncated raw firmware'):
+        OTA.inspect_artifact_pair(b'\x00' * 31, sample())

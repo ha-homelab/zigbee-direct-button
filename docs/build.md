@@ -46,6 +46,13 @@ Outputs:
 - `metadata.json`: checked OTA identity, lengths, CRC, and hashes.
 - `SHA256SUMS`: hashes of the two artifacts.
 
+The **Native TS0041 firmware** CI job also builds this recipe on a native Linux
+x86_64 runner. Its four-file artifact binds `metadata.json` to the checked-out
+commit, source tree, workflow run, runtime and toolchain checksums, and includes
+the metadata hash in `SHA256SUMS`. A PR artifact identifies the tested merge
+commit; publish release assets only from the successful run for the final merged
+commit. This build job is required by the CI gate.
+
 The OTA identity is manufacturer **4417 / 0x1141**, image type **45636 / 0xb244**, file version **0x11033002**, label **1.1.3-holdoff2**. The version is newer than the upstream `0x11033000` target and the previous hold-off release `0x11033001`. The image is **not** a stock conversion image.
 
 ```sh
