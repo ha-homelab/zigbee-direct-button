@@ -1,6 +1,6 @@
 # Home Assistant / ZHA configuration
 
-These examples contain placeholders. Use your own device/entity IDs locally. The reference integration was exercised with HA 2026.9.1; UI names and internal WebSocket operations can change between releases.
+These examples contain placeholders and target the opt-in holdoff2 beta (`0x11033002`). Use your own device/entity IDs locally. The earlier holdoff1 reference integration was exercised with HA 2026.9.1; UI names and internal WebSocket operations can change between releases. Those observations do not establish physical acceptance of this beta.
 
 ## Install the target-only quirk and OTA provider
 
@@ -15,7 +15,7 @@ Validate HA configuration. Restart HA if enabling the custom-quirk path/provider
 Generate the index with an actual trusted artifact URL; the local provider reads the sibling file:
 
 ```sh
-python3 scripts/make_ota_index.py output/ts0041-hold-off-1.1.3.1.zigbee   --url https://example.invalid/replace-with-your-trusted-artifact-url \
+python3 scripts/make_ota_index.py output/ts0041-hold-off-1.1.3.2.zigbee   --url https://example.invalid/replace-with-your-trusted-artifact-url \
   --output output/index.json
 ```
 
@@ -37,7 +37,7 @@ For hold-to-off, no Level Control binding is required. Avoid changing unrelated 
 
 ## Configure only after installing the patched image
 
-Verify runtime version **`0x11033001`** first. On endpoint 1, input/server On/Off Configuration cluster **`0x0007`**, set:
+Verify runtime version **`0x11033002`** first when testing this beta. On endpoint 1, input/server On/Off Configuration cluster **`0x0007`**, set:
 
 - `switch_mode`, attribute **`0xff00`**: **Momentary / 1**.
 - `switch_actions`, attribute **`0x0010`**: **ToggleSimple / 2**.
@@ -57,7 +57,7 @@ action: update.install
 target:
   entity_id: update.example_button_firmware
 data:
-  version: "0x11033001"
+  version: "0x11033002"
 ```
 
 Use the exact version string offered by your HA version. Check live update state before retrying, and confirm the installed version afterward. Do not create a service loop that repeatedly starts updates.

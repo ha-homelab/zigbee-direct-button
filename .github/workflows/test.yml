@@ -1,10 +1,14 @@
 name: Host tests
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ${{ fromJSON((vars.CI_RUNNER_MODE == 'self-hosted' || vars.CI_RUNNER_MODE == 'k3s') && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) && (vars.CI_RUNNER_LABELS || '[]') || '["ubuntu-latest"]') }}
@@ -57,9 +61,96 @@ jobs:
           --security-opt no-new-privileges zigbee-button-ci
           bash -e -c 'make -j2 stub/build stub/build_end_device && python -m pytest tests/ -q -W error'
 
+  firmware:
+    name: Native TS0041 firmware
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the actual target on native x86_64
+        run: |
+          test "$(uname -m)" = x86_64
+          mkdir -p output
+          chmod g+w output
+          docker build --tag zigbee-button-firmware .
+          docker run --rm --cap-drop ALL --security-opt no-new-privileges \
+            --group-add "$(id -g)" \
+            --env TAR_OPTIONS=--no-same-owner \
+            --mount "type=bind,source=$PWD/output,target=/output" zigbee-button-firmware
+      - name: Bind the public artifacts to this source and build
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          WORKFLOW_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
+          docker run --rm --network none --cap-drop ALL --security-opt no-new-privileges \
+            zigbee-button-firmware python3 -c \
+            'import json,platform; print(json.dumps({"os": platform.system(), "architecture": platform.machine(), "python": platform.python_version()}))' \
+            > "$RUNNER_TEMP/firmware-runtime.json"
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          sys.path.insert(0, "scripts")
+          from check_ota import inspect_artifact_pair
+
+          output = Path("output")
+          image = output / "ts0041-hold-off-1.1.3.2.zigbee"
+          binary = output / "ts0041-hold-off-1.1.3.2.bin"
+          metadata = inspect_artifact_pair(binary.read_bytes(), image.read_bytes())
+          provenance = json.loads(Path("PROVENANCE.json").read_text())
+          metadata["build"] = {
+              "sourceCommit": os.environ["SOURCE_COMMIT"],
+              "sourceTree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], text=True).strip(),
+              "sourceRepository": os.environ["SOURCE_REPOSITORY"],
+              "workflowRun": os.environ["WORKFLOW_RUN"],
+              "containerImage": subprocess.check_output(
+                  ["docker", "image", "inspect", "--format", "{{.Id}}", "zigbee-button-firmware"],
+                  text=True,
+              ).strip(),
+              "containerBase": Path("Dockerfile").read_text().splitlines()[0].removeprefix("FROM "),
+              "runtime": json.loads((Path(os.environ["RUNNER_TEMP"]) / "firmware-runtime.json").read_text()),
+              "sdkArchiveSha256": provenance["build"]["sdk_archive_sha256"],
+              "compilerArchiveSha256": provenance["build"]["compiler_sha256"],
+              "provenanceSha256": hashlib.sha256(Path("PROVENANCE.json").read_bytes()).hexdigest(),
+          }
+          # Docker owns its output files; replace through the runner-owned directory.
+          metadata_temp = output / ".metadata.json"
+          metadata_temp.write_text(json.dumps(metadata, indent=2) + "\n")
+          metadata_temp.replace(output / "metadata.json")
+          names = [binary.name, image.name, "metadata.json"]
+          sums_temp = output / ".SHA256SUMS"
+          sums_temp.write_text("".join(
+              f"{hashlib.sha256((output / name).read_bytes()).hexdigest()}  {name}\n" for name in names
+          ))
+          sums_temp.replace(output / "SHA256SUMS")
+          PY
+          (cd output && sha256sum -c SHA256SUMS)
+      - name: Upload only the verified public firmware files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ts0041-firmware-${{ github.sha }}
+          path: |
+            output/ts0041-hold-off-1.1.3.2.bin
+            output/ts0041-hold-off-1.1.3.2.zigbee
+            output/metadata.json
+            output/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+
   gate:
     name: CI gate
-    needs: [test, container]
+    needs: [test, container, firmware]
     if: ${{ always() }}
     runs-on: ${{ fromJSON((vars.CI_RUNNER_MODE == 'self-hosted' || vars.CI_RUNNER_MODE == 'k3s') && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) && (vars.CI_RUNNER_LABELS || '[]') || '["ubuntu-latest"]') }}
     timeout-minutes: 5
@@ -73,4 +164,5 @@ jobs:
         env:
           TEST_RESULT: ${{ needs.test.result }}
           CONTAINER_RESULT: ${{ needs.container.result }}
-        run: test "$TEST_RESULT" = success && test "$CONTAINER_RESULT" = success
+          FIRMWARE_RESULT: ${{ needs.firmware.result }}
+        run: test "$TEST_RESULT" = success && test "$CONTAINER_RESULT" = success && test "$FIRMWARE_RESULT" = success

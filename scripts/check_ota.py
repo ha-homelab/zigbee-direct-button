@@ -9,7 +9,7 @@ import struct
 
 HEADER = struct.Struct('<I5HIH32sI')
 SUBELEMENT = struct.Struct('<HI')
-EXPECTED = (4417, 45636, 0x11033001)
+EXPECTED = (4417, 45636, 0x11033002)
 
 
 def inspect_image(data: bytes) -> dict:
@@ -52,12 +52,33 @@ def inspect_image(data: bytes) -> dict:
     }
 
 
+def inspect_artifact_pair(binary: bytes, image: bytes) -> dict:
+    """Check the raw application against the OTA packer's defined transformations."""
+    metadata = inspect_image(image)
+    if len(binary) < 32:
+        raise ValueError('Truncated raw firmware')
+    payload = bytearray(binary)
+    if payload[6:8] != b'\x5d\x02':
+        payload.extend(b'\xff' * (-len(payload) % 16))
+        payload[0x18:0x1c] = (len(payload) + 4).to_bytes(4, 'little')
+        payload[6:8] = b'\x5d\x02'
+        payload.extend((binascii.crc32(payload) ^ 0xFFFFFFFF).to_bytes(4, 'little'))
+    if payload != image[HEADER.size + SUBELEMENT.size:]:
+        raise ValueError('Raw firmware does not match the OTA payload')
+    metadata['binarySize'] = len(binary)
+    metadata['binarySha256'] = hashlib.sha256(binary).hexdigest()
+    return metadata
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('image', type=Path)
+    parser.add_argument('--binary', type=Path, help='Also verify the matching raw application')
     args = parser.parse_args()
     try:
-        metadata = inspect_image(args.image.read_bytes())
+        image = args.image.read_bytes()
+        metadata = (inspect_artifact_pair(args.binary.read_bytes(), image)
+                    if args.binary else inspect_image(image))
     except (OSError, ValueError, UnicodeDecodeError) as error:
         parser.exit(1, f'Invalid image: {error}\n')
     print(json.dumps(metadata, indent=2))

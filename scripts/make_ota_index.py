@@ -29,7 +29,7 @@ def main():
         entry.update({
             'fileName': args.image.name, 'path': args.image.name, 'url': args.url,
             'manufacturerName': ['mrpevh8p'], 'modelId': 'TS0041-TB',
-            'releaseNotes': 'Experimental EndDevice 1.1.3-holdoff1; opt-in short-release Toggle and absolute Off on hold.',
+            'releaseNotes': 'Experimental EndDevice 1.1.3-holdoff2; opt-in short-release Toggle and absolute Off on hold.',
         })
         with args.output.open('x') as output:
             output.write(json.dumps([entry], indent=2) + '\n')

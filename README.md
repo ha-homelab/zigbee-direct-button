@@ -28,7 +28,13 @@ firmware + binding in flash] -->|Zigbee On/Off group command| G[Native Zigbee gr
 
 An HA light-group helper and a native Zigbee group are different things. The latter is required for this command path. The Zigbee network, the button's parent/router, and powered lamps still matter. This does not bind a Zigbee button directly to Matter-only lights.
 
-## Current evidence
+## Current beta and earlier device evidence
+
+The current source build prepares **v1.1.3-holdoff.2-beta.1**, with firmware
+identity **`0x11033002`**. It includes the shared firmware memory-boundary fixes
+and is an opt-in test candidate. It has not been installed or physically accepted.
+The deployment observations below apply to the earlier **`0x11033001`** image.
+See [changes](CHANGELOG.md) and [the matching build/inspection instructions](docs/build.md).
 
 - **Earlier upstream baseline:** direct group Toggle was physically verified to switch five Zigbee lamps promptly with the old HA button automation disabled. That observation predates the hold-to-off update.
 - The new hold-to-off implementation passes **243 host simulation tests**, including 12 checks of its command behavior across two build variants.
@@ -45,7 +51,7 @@ An HA light-group helper and a native Zigbee group are different things. The lat
 5. [Verify short press, hold, power persistence, and recovery](docs/validation.md).
 6. [Troubleshoot symptoms](docs/troubleshooting.md) or [roll back](docs/recovery.md).
 
-Already converted and comfortable with ZHA? Build the image, install the target-only quirk, use a local OTA provider, wait for a verified installed version of **`0x11033001`**, then set **Momentary + ToggleSimple + ShortPressLongOff + 1,000 ms**. Preserve the native group and leave the old HA toggle automation disabled. Follow the runbooks before doing this on hardware.
+Already converted and comfortable with ZHA? Follow the matching release instructions, install the target-only quirk, use a local OTA provider, verify that the installed version matches that release, then set **Momentary + ToggleSimple + ShortPressLongOff + 1,000 ms**. Preserve the native group and leave the old HA toggle automation disabled. Follow the runbooks before doing this on hardware.
 
 ## Build
 

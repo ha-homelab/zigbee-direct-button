@@ -1,5 +1,10 @@
 # Backup and upgrade runbook
 
+> The installation observations on this page describe holdoff1 (`0x11033001`).
+> The current opt-in beta builds holdoff2 (`0x11033002`); use its matching
+> [build and inspection instructions](build.md) and do not treat the earlier
+> installation record as beta acceptance.
+
 Read [compatibility](design.md) first. There are two distinct transitions: stock Tuya to upstream custom firmware, and an already-converted button to this hold-to-off build. They use different OTA image types.
 
 ## 1. Capture a private recovery point
@@ -34,10 +39,10 @@ After conversion completes, allow the automatic interview/rejoin to finish. Conf
 
 1. Build or obtain the trusted **hold-to-off** image and validate its hash and metadata using [the build guide](build.md).
 2. Install `examples/home-assistant/tuya_direct_button.py` and the local OTA provider configuration from [the ZHA guide](home-assistant.md). Keep only one custom quirk registering this target; replace or narrow an old broad quirk rather than stacking conflicting registrations.
-3. Generate a local index for the image. Confirm the exact button's update entity offers **`0x11033001`**, currently reports the expected older version, and is not already updating.
-4. For the converted upstream **1.1.3 / `0x11033000`** battery firmware, prepare the guarded update-after-wake script and use the controlled startup procedure below. Repeated working-key presses alone do not reopen its fast-poll window. Do not touch the reset/pair key.
+3. Generate a local index for the image. Confirm the exact button's update entity offers the inspected release version (**`0x11033002`** for this beta), currently reports the expected older version, and is not already updating.
+4. Check the installed firmware's wake behavior before starting the update. For the converted upstream **1.1.3 / `0x11033000`** battery firmware, repeated working-key presses alone do not reopen its fast-poll window. The historical procedure below records the earlier `.0` to `.1` update; its guarded script does not install this beta. Do not touch the reset/pair key.
 5. Watch actual byte/percentage progress and completion. `in_progress: true` without any progress means HA may only be waiting; it does not prove firmware bytes were transferred. Do not start a second updater after a disconnected browser or SSH session: read the live state first.
-6. After 100%, wait for the device to restart and HA to query/re-interview it. Read the installed firmware from the device: **`0x11033001`**, `TS0041-TB` / `mrpevh8p`. A successful service call or a downloaded file is insufficient.
+6. After 100%, wait for the device to restart and HA to query/re-interview it. Read the installed firmware from the device: the inspected release version (**`0x11033002`** for this beta), `TS0041-TB` / `mrpevh8p`. A successful service call or a downloaded file is insufficient.
 7. Only then configure mode 4 and the 1,000 ms threshold, read them back uncached, and execute [the physical checks](validation.md).
 
 The original reference conversion took about eight and a half minutes. OTA duration depends on block size, radio conditions, retries, and sleep behavior; that timing is not a deadline for this image.
@@ -48,9 +53,9 @@ In the converted upstream battery firmware, the default startup fast-poll window
 
 In the observed HA/ZHA version, `update.install` first waits for a Poll Control bind and writes a **30-second** fast-poll timeout before sending `image_notify`. An update attempt timed out during this preparation without transferring image bytes, despite successful ordinary key presses. The short-press technique that helped the earlier **stock Tuya conversion** is not sufficient evidence that the converted firmware is ready for a subsequent OTA.
 
-### Start within the startup fast-poll window
+### Historical `.0` to `.1` startup-window procedure
 
-Use [the example HA script](../examples/home-assistant/update-after-wake.yaml) to remove the delay between a physical wake and starting the service. It uses no credentials or additional Python packages.
+The [example HA script](../examples/home-assistant/update-after-wake.yaml) records the earlier update from `0x11033000` to `0x11033001`. Its strict version guards intentionally do not match the holdoff2 beta. Do not use it unchanged for this beta. It uses no credentials or additional Python packages.
 
 1. **First prove the previous install has finished or failed and no image payload is transferring.** Check the live update state, completion/error, and progress. If an install is still active, its status is ambiguous, or image blocks are moving, do not remove the battery. A lack of visible percentage by itself is not permission to interrupt it.
 2. Replace both example entity IDs throughout the script with the exact button's firmware-update and press-action sensor entities. Add the entry to the HA script configuration and reload scripts while no update is active. Keep the existing direct binding and leave the old HA Toggle automation disabled.
