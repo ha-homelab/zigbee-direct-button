@@ -37,10 +37,18 @@ The version and attribute readings establish installation and stored configurati
 
 ## Before declaring a deployment successful
 
+Apply this checklist to the **exact candidate being installed**, not an earlier
+build. The current `v1.1.3-holdoff.2-beta.1` candidate has OTA identity
+`0x11033002`. The `0x11033001` readings and hashes above/below are historical
+holdoff1 evidence; they do not accept holdoff2. Use the metadata and checksums
+attached to the selected release, and record its source commit, OTA SHA-256 and
+uncached installed-version reading together. Track outstanding current-candidate
+acceptance in [issue #29](https://github.com/ha-homelab/zigbee-direct-button/issues/29).
+
 Record these locally, without uploading identifiers or private logs:
 
 1. Build metadata/hash matches the artifact served by HA.
-2. Runtime version is `0x11033001`; identity and loaded target quirk are correct.
+2. Runtime version equals the selected release metadata (`0x11033002` for the current holdoff2 beta); hardware identity and loaded target quirk are correct.
 3. Native group contains every intended lamp and source binding has a successful device acknowledgment.
 4. Device reads back Momentary, ToggleSimple, mode 4, and 1,000 ms.
 5. With all lights off, a short press switches them on **only on release**.
@@ -61,9 +69,9 @@ Once baseline behavior is confirmed, plan these one at a time:
 
 Do not combine all outages in one experiment; otherwise failures cannot be assigned to firmware, network, power, or reporting. Record partial results as partial results.
 
-## Published build
+## Earlier holdoff1 build
 
-The normal-update image and [metadata](../firmware/1.1.3-holdoff1/metadata.json) are in `firmware/1.1.3-holdoff1/`. OTA SHA-256:
+The earlier normal-update image and [metadata](../firmware/1.1.3-holdoff1/metadata.json) are in `firmware/1.1.3-holdoff1/`. OTA SHA-256:
 
 ```text
 de84c34f5d0f9a15d8f3bf47323958121eb3e2b599f19c2e4ca389bec046e59d
