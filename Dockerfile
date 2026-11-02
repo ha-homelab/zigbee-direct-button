@@ -1,4 +1,4 @@
-FROM python:3.15-slim-bookworm@sha256:575f8bc12ec26542e0678bc6b60e385218248019d433157ec327264a78c3a853
+FROM python:3.15-slim-bookworm@sha256:4e03260adeeebafccd084f3584e6b84823aba5651cfb53ef8a078ed441ddf9cd
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc clang libc6-dev make git curl unzip bzip2 ca-certificates \
     && rm -rf /var/lib/apt/lists/*
