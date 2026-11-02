@@ -14,3 +14,26 @@ Use GitHub issues for non-sensitive bugs and enhancements, and pull requests for
 Follow the existing C formatting (`uncrustify.cfg`) and Python PEP 8 naming/indentation. Use bounded inputs and explicit failure paths. New functionality requires positive/negative tests; fixes require a regression that exercises the affected behavior. For shared C changes, also build with `HOST_CC=clang SANITIZERS=address,undefined` and run tests with `UBSAN_OPTIONS=halt_on_error=1`. Run `python -m ruff check --isolated --ignore-noqa --select E9,F63,F7,F82 .` for common Python mistakes. These basic diagnostics do not enforce every style rule.
 
 Resolve substantive review findings and required CI before normal merge. Target-specific source changes additionally require the actual target build before a firmware release; host tests do not authorize flashing hardware. The focused `patches/hold-off.patch` remains the original feature delta; later maintenance/security changes are recorded in Git history and CHANGELOG.md.
+
+## Hashed Python dependencies
+
+`requirements.txt` declares the direct tooling versions. CI, the development
+container, and `make setup_venv` install the complete `requirements.lock` with artifact
+hashes. Regenerate with uv 0.13.4 when a direct version
+changes, then run the host and packaged-runtime checks:
+
+```sh
+uv pip compile requirements.txt --python-version 3.12 --universal --generate-hashes --only-binary=:all: --no-annotate --output-file requirements.lock
+```
+
+Python 3.12 CI requires binary wheels. PyYAML 6.0.3 has no Python 3.15 wheel,
+so the container and local setup build only that verified source archive using
+the separately hashed setuptools/Cython backend, with build isolation disabled.
+All other packages still require wheels. Regenerate the backend lock with:
+
+```sh
+uv pip compile requirements-build.in --python-version 3.12 --universal --generate-hashes --only-binary=:all: --no-annotate --output-file requirements-build.lock
+```
+
+The dependency-lock test rejects direct inputs that no longer match either lock.
+The packaged-runtime CI job compiles and tests under the actual Python 3.15 image.

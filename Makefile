@@ -93,7 +93,8 @@ format:
 
 setup_venv:
 	python3 -m venv .venv
-	. .venv/bin/activate && pip install -r requirements.txt
+	. .venv/bin/activate && pip install --require-hashes --only-binary=:all: -r requirements-build.lock
+	. .venv/bin/activate && pip install --require-hashes --no-build-isolation --only-binary=:all: --no-binary=PyYAML -r requirements.lock
 
 setup: silabs/tools/all telink/tools/all setup_venv
 
