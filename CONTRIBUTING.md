@@ -23,7 +23,7 @@ hashes. Regenerate with uv 0.13.4 when a direct version
 changes, then run the host and packaged-runtime checks:
 
 ```sh
-uv pip compile requirements.txt --python-version 3.12 --universal --generate-hashes --only-binary=:all: --no-annotate --output-file requirements.lock
+uv pip compile requirements.txt .github/requirements-wheels-only.in --python-version=3.12 --universal --generate-hashes --output-file=requirements.lock
 ```
 
 Python 3.12 CI requires binary wheels. PyYAML 6.0.3 has no Python 3.15 wheel,
@@ -32,7 +32,7 @@ the separately hashed setuptools/Cython backend, with build isolation disabled.
 All other packages still require wheels. Regenerate the backend lock with:
 
 ```sh
-uv pip compile requirements-build.in --python-version 3.12 --universal --generate-hashes --only-binary=:all: --no-annotate --output-file requirements-build.lock
+uv pip compile requirements-build.in .github/requirements-wheels-only.in --python-version=3.12 --universal --generate-hashes --output-file=requirements-build.lock
 ```
 
 The dependency-lock test rejects direct inputs that no longer match either lock.
