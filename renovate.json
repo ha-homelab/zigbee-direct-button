@@ -1,0 +1,83 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "local>victron-venus/venus-os-ci-toolkit:renovate-fleet"
+  ],
+  "enabledManagers": [
+    "github-actions",
+    "custom.regex",
+    "custom.jsonata",
+    "dockerfile",
+    "pip-compile",
+    "pip_requirements"
+  ],
+  "ignorePaths": [
+    "**/vendor/**",
+    "**/node_modules/**",
+    "**/fixtures/**",
+    "**/tools/browser-compatibility/**",
+    ".github/cosign/**"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "matchFileNames": [
+        "/^[^/]+$/"
+      ],
+      "schedule": [
+        "at any time"
+      ]
+    },
+    {
+      "matchManagers": [
+        "pip_requirements",
+        "pip-compile"
+      ],
+      "matchFileNames": [
+        "/^[^/]+$/"
+      ],
+      "schedule": [
+        "at any time"
+      ]
+    },
+    {
+      "description": "Regenerate compiled locks with their recorded source command; avoid independent edits to inputs or output snapshots.",
+      "matchManagers": [
+        "pip_requirements"
+      ],
+      "matchFileNames": [
+        ".github/requirements-wheels-only.in",
+        "requirements-build.in",
+        "requirements-build.lock",
+        "requirements.lock",
+        "requirements.txt"
+      ],
+      "enabled": false
+    }
+  ],
+  "pip_requirements": {
+    "managerFilePatterns": [
+      "/(^|/)([^/]*[-_])?requirements[^/]*\\.(txt|pip)$/"
+    ],
+    "ignorePaths": [
+      "**/vendor/**",
+      "**/node_modules/**",
+      "**/fixtures/**",
+      "**/tools/browser-compatibility/**",
+      ".github/cosign/**",
+      ".github/requirements-wheels-only.in",
+      "requirements-build.in",
+      "requirements-build.lock",
+      "requirements.lock",
+      "requirements.txt"
+    ]
+  },
+  "pip-compile": {
+    "managerFilePatterns": [
+      "/^requirements\\-build\\.lock$/",
+      "/^requirements\\.lock$/"
+    ]
+  }
+}
