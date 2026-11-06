@@ -10,6 +10,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 jobs:
+  scope:
+    uses: victron-venus/venus-os-ci-toolkit/.github/workflows/change-scope.yml@04d1a895fac608e5c972e49b127a1a792d7ad725 # main
+    with:
+      force-full: false
+      documentation-paths: "[\"GOVERNANCE.md\", \"ROADMAP.md\"]"
   test:
     runs-on: ${{ fromJSON((vars.CI_RUNNER_MODE == 'self-hosted' || vars.CI_RUNNER_MODE == 'k3s') && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) && (vars.CI_RUNNER_LABELS || '[]') || '["ubuntu-latest"]') }}
     timeout-minutes: 20
@@ -42,8 +47,11 @@ jobs:
         run: |
           bash -n scripts/build.sh
           python -m py_compile scripts/check_ota.py scripts/make_ota_index.py examples/home-assistant/tuya_direct_button.py
-
+      - name: Test documentation-scope gate contracts
+        run: python3 .github/workflow-tests/test_docs_scope.py
   container:
+    if: ${{ needs.scope.outputs.run == 'true' }}
+    needs: ["scope"]
     name: Packaged Python runtime
     runs-on: ${{ fromJSON((vars.CI_RUNNER_MODE == 'self-hosted' || vars.CI_RUNNER_MODE == 'k3s') && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) && (vars.CI_RUNNER_LABELS || '[]') || '["ubuntu-latest"]') }}
     timeout-minutes: 20
@@ -63,6 +71,8 @@ jobs:
           bash -e -c 'make -j2 stub/build stub/build_end_device && python -m pytest tests/ -q -W error'
 
   firmware:
+    if: ${{ needs.scope.outputs.run == 'true' }}
+    needs: ["scope"]
     name: Native TS0041 firmware
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -151,19 +161,36 @@ jobs:
 
   gate:
     name: CI gate
-    needs: [test, container, firmware]
+    needs: ["container", "firmware", "scope", "test"]
     if: ${{ always() }}
     runs-on: ${{ fromJSON((vars.CI_RUNNER_MODE == 'self-hosted' || vars.CI_RUNNER_MODE == 'k3s') && ((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) || (contains(fromJSON('["push","schedule","workflow_dispatch"]'), github.event_name) && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))) && (vars.CI_RUNNER_LABELS || '[]') || '["ubuntu-latest"]') }}
     timeout-minutes: 5
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+      - uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: audit
-
-      - name: Require successful host tests
+      - name: Require the exact selected validation path
         env:
-          TEST_RESULT: ${{ needs.test.result }}
-          CONTAINER_RESULT: ${{ needs.container.result }}
-          FIRMWARE_RESULT: ${{ needs.firmware.result }}
-        run: test "$TEST_RESULT" = success && test "$CONTAINER_RESULT" = success && test "$FIRMWARE_RESULT" = success
+          RESULTS: ${{ toJSON(needs) }}
+        shell: python3 {0}
+        run: |
+          import json, os
+          results = json.loads(os.environ['RESULTS'])
+          expected = ['container', 'firmware', 'scope', 'test']
+          always = ['scope', 'test']
+          if set(results) != set(expected):
+              raise SystemExit('Validation job inventory differs')
+          scope = results['scope']
+          outputs = scope.get('outputs', {})
+          run = outputs.get('run')
+          if scope['result'] != 'success' or run not in {'true', 'false'}:
+              raise SystemExit('Change scope did not succeed')
+          if run == 'false' and outputs.get('reason') != 'documentation-only':
+              raise SystemExit('Unproven documentation-only scope')
+          failed = {}
+          for name, value in results.items():
+              wanted = 'success' if run == 'true' or name in always else 'skipped'
+              if value['result'] != wanted:
+                  failed[name] = {'actual': value['result'], 'expected': wanted}
+          if failed:
+              raise SystemExit(f'Validation did not pass: {failed}')
