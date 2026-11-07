@@ -3,5 +3,5 @@ MarkupSafe==3.0.4
 PyYAML==6.0.3
 pytest==9.2.0
 pyserial==3.5
-click==8.5.0
-ruff==0.17.3
+click==8.5.1
+ruff==0.17.4
