@@ -20,7 +20,7 @@ A later Clang ASan/UBSan run passes 309 host/helper tests with Python warnings t
 
 ### Installed firmware and device configuration
 
-The third normal-update attempt succeeded after a controlled five-second battery removal, reinsertion, and immediate large-key press to start within the startup fast-poll window. The [upgrade runbook](upgrade.md#start-within-the-startup-fast-poll-window) explains this procedure and why it must only be used when no previous install or payload transfer is active.
+The third normal-update attempt succeeded after a controlled five-second battery removal, reinsertion, and immediate large-key press to start within the startup fast-poll window. The [upgrade runbook](upgrade.md#historical-0-to-1-startup-window-procedure) explains this procedure and why it must only be used when no previous install or payload transfer is active.
 
 Actual transfer was observed from **22:31:00.642890 to 23:00:52.336563 UTC on 2026-10-08**, approximately **29 minutes 52 seconds**. HA's installation service completed successfully. This normal OTA took longer than the earlier stock-to-custom conversion, which took about eight and a half minutes. Neither observation is an expected timeout: monitor actual progress and completion rather than treating elapsed time alone as failure.
 
